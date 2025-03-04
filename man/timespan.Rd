@@ -14,38 +14,41 @@ timespan(
 )
 }
 \arguments{
-\item{data}{The input data frame or linelist}
+\item{data}{The input \code{<data.frame>} or \code{<linelist>}}
 
-\item{target_column}{A string used to specify the name of the date column of
-interest. The values in this column should be of type 'Date' in ISO
-format ("2024-01-31").}
+\item{target_column}{A \code{<vector>} of character used to specify the name
+of the date column of interest. The values in this column should be of
+type \code{<Date>} in ISO8601 format, e.g., 2024-01-31.}
 
-\item{end_date}{An end date. It can be either a character that is the name of
-another column of type 'Date' from the input data or a vector of Dates or
-a single Date value. This should also be in the ISO format ("2024-01-31").
-Default is today's date \code{Sys.Date()}.}
+\item{end_date}{The end date. It can be either a \code{<character>} that is
+the name of another column of type \code{<Date>} from the input data or a
+\code{<vector>} of Dates or a single \code{<Date>} value. This should also
+be in the ISO8601 format, e.g., 2024-01-31. Default is today's date
+\code{Sys.Date()}.}
 
-\item{span_unit}{A string that specifies the units in which the time span
-between the dates will be returned. The possible units are: 'years',
-'months', 'weeks' or 'days'.}
+\item{span_unit}{A \code{<character>} that specifies the units in which the
+time span between the dates will be returned. The possible units are:
+'years', 'months', 'weeks' or 'days'.}
 
-\item{span_column_name}{A string for the name of the new column to be used to
-store the calculated time span in the input data frame.}
+\item{span_column_name}{A \code{<character>} that specifies the name of the
+new column to be used to store the calculated time span in the input data
+frame.}
 
-\item{span_remainder_unit}{A string for the unit in which the remainder of
-the time span should be calculated. May be one of "months", "weeks",
-and "days". Remainders requested in the same unit as the age will return
-values of 0. Default is NULL for decimal time span.}
+\item{span_remainder_unit}{A \code{<character>} that specifies the unit in
+which the remainder of the time span should be calculated. May be one of
+"months", "weeks", and "days". Remainders requested in the same unit as
+the age will return values of 0. Default is \code{NULL} for decimal
+time span.}
 }
 \value{
-The input data frame with one or two additional columns:
-\enumerate{
-\item "span" or any other name chosen by the user. This will contain the
-calculated time span in the desired units.
-\item "\emph{_remainder": a column with the number of the remaining
+The input \code{<data.frame>} with one or two additional columns:
+\describe{
+\item{span}{or any other name chosen by the user. This will contain the
+calculated time span in the desired units.}
+\item{"*_remainder"}{a column with the number of the remaining
 days or weeks or months depending on the value of the
-'span_remainder_unit' parameter. Here '}' represents the value of the
-'span_column_name' argument.
+'span_remainder_unit' parameter. The star represents here the value
+of the 'span_column_name' argument.}
 }
 }
 \description{
@@ -58,19 +61,19 @@ Calculate time span between dates
 # import the data, replace missing values with NA and convert date into ISO
 # format
 data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
-data <- data |>
+data <- data \%>\%
   replace_missing_values(target_columns = "dateOfBirth",
-                         na_strings     = "-99") |>
-  standardize_dates(target_columns  = "dateOfBirth",
+                         na_strings = "-99") \%>\%
+  standardize_dates(target_columns = "dateOfBirth",
                     error_tolerance = 0.0)
 
 # calculate the age in 'years' and return the remainder in 'months'
 age <- timespan(
-  data                = data,
-  target_column       = "dateOfBirth",
-  end_date            = Sys.Date(),
-  span_unit           = "years",
-  span_column_name    = "age_in_years",
+  data = data,
+  target_column = "dateOfBirth",
+  end_date = Sys.Date(),
+  span_unit = "years",
+  span_column_name = "age_in_years",
   span_remainder_unit = "months"
 )
 }

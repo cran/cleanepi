@@ -1,22 +1,24 @@
-#' Check whether the order of the sequence of date-events is valid
+#' Checks whether the order in a sequence of date events is chronological.
+#' order.
 #'
-#' @description Checks whether a date sequence in
-#' a vector of  specified columns is in order or not.
+#' @description Checks whether a date sequence in a vector of specified columns
+#' is in chronological order or not.
 #'
-#' @param data A data frame
-#' @param target_columns A vector of event column names. Users should specify at
-#'    least 2 column names in the expected order. For example:
-#'    target_columns = c("date_symptoms_onset", "date_hospitalization",
-#'    "date_death").
-#'    When the input data is a `linelist` object, this parameter can be set to
-#'    `linelist_tags` if you wish to the date sequence across tagged columns
-#'    only.
-#'    The values in this column should be in the ISO8601 format (2024-12-31).
-#'    Otherwise, use the `standardize_dates()` function to standardize them.
+#' @param data The input \code{<data.frame>} or \code{<linelist>}
+#' @param target_columns A \code{<vector>} of column names for events. Users
+#'    should specify at least 2 column names in the expected order. For example:
+#'    \code{target_columns = c("date_symptoms_onset", "date_hospitalization",
+#'    "date_death")}.
+#'    When the input data is a \code{<linelist>} object, this parameter can be
+#'    set to \code{linelist_tags} to apply the date sequence checking
+#'    exclusively to the tagged columns.
+#'    The date values in the target columns should be in the ISO8601 format,
+#'    e.g., 2024-12-31. Otherwise, use the \code{standardize_dates()} function
+#'    to standardize the target columns.
 #'
 #' @returns The input dataset. When found, the incorrect date sequences will be
-#'    stored in the report where they can be accessed using
-#'    `attr(data, "report")`.
+#'    stored in the report and can be accessed using
+#'    \code{attr(data, "report")}.
 #' @export
 #'
 #' @examples
@@ -24,16 +26,17 @@
 #' data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
 #'
 #' # standardize the date values
-#' data <- data |>
+#' data <- data %>%
 #'   standardize_dates(
 #'     target_columns  = c("date_first_pcr_positive_test", "date.of.admission"),
 #'     error_tolerance = 0.4,
-#'     format          = NULL,
-#'     timeframe       = NULL
+#'     format = NULL,
+#'     timeframe = NULL
 #'   )
 #'
+#' # check the date sequence in two columns
 #' good_date_sequence <- check_date_sequence(
-#'   data           = data,
+#'   data = data,
 #'   target_columns = c("date_first_pcr_positive_test", "date.of.admission")
 #' )
 check_date_sequence <- function(data, target_columns) {
@@ -47,40 +50,64 @@ check_date_sequence <- function(data, target_columns) {
   target_columns <- retrieve_column_names(data, target_columns)
   target_columns <- get_target_column_names(data, target_columns, cols = NULL)
 
-
+  missing_cols <- !target_columns %in% names(data)
   # check if all columns are part of the data frame
-  if (!all(target_columns %in% names(data))) {
-    idx            <- which(!(target_columns %in% names(data)))
-    warning("\nRemoving unrecognised column name: ", target_columns[idx],
-            call. = FALSE)
-    target_columns <- target_columns[-idx]
+  if (any(missing_cols)) {
+    # send a warning if some columns are not part of the data
+    cli::cli_alert_info(
+      tr_("Found the following unrecognised column name{?s}: {.field {target_columns[missing_cols]}}."), # nolint: line_length_linter
+      wrap = TRUE
+    )
+    target_columns <- target_columns[!missing_cols]
+    # After removing unrecognized column names, the process shall be stopped if
+    # there is only one column left in `target_columns`
     if (length(target_columns) < 2L) {
-      stop("\nAt least 2 event dates are required!")
+      cli::cli_abort(c(
+        tr_("Insufficient number of columns to compare."),
+        x = tr_("At least two columns of type {.cls Date} are required for this operation."), # nolint: line_length_linter
+        i = tr_("Have you provided an invalid column name?")
+      ), call = NULL)
     }
   }
 
   # checking the date sequence
-  tmp_data   <- data %>% dplyr::select(dplyr::all_of(target_columns))
+  tmp_data <- data %>% dplyr::select(dplyr::all_of(target_columns))
   order_date <- apply(tmp_data, 1L, is_date_sequence_ordered)
-  bad_order  <- which(!order_date)
-  if (!all(order_date)) {
-    tmp_data <- tmp_data[bad_order, ]
-    # adding incorrect records to the report
-    data     <- add_to_report(x     = data,
-                              key   = "incorrect_date_sequence",
-                              value = tmp_data)
-    warning("Detected ", length(bad_order),
-            " incorrect date sequences at line(s): ",
-            toString(bad_order),
-            call. = FALSE)
+
+  # when everything is in order,
+  # send a message that no incorrect sequence of event was found
+  if (all(order_date)) {
+    cli::cli_alert_info(
+      tr_("No incorrect date sequence was detected.")
+    )
+    return(data)
   }
+
+  # flag out the row indices of the incorrect sequence of events
+  bad_order <- which(!order_date)
+  tmp_data <- tmp_data[bad_order, ]
+  # add the row numbers of incorrect records to the report
+  tmp_data <- data.frame(
+    cbind(row_id = bad_order, tmp_data)
+  )
+  # adding incorrect records to the report
+  data <- add_to_report(
+    x = data,
+    key = "incorrect_date_sequence",
+    value = tmp_data
+  )
+  # send a message about the presence of incorrect date sequence
+  cli::cli_inform(c(
+    "!" = tr_("Detected {.val {length(bad_order)}} incorrect date sequence{?s} at line{?s}: {.val {toString(bad_order)}}."), # nolint: line_length_linter
+    i = tr_("Enter {.code attr(dat, \"report\")[[\"incorrect_date_sequence\"]]} to access them, where {.val dat} is the object used to store the output from this operation.") # nolint: line_length_linter
+  ))
 
   return(data)
 }
 
 #' Check order of a sequence of date-events
 #'
-#' @param x A vector of Date values
+#' @param x A \code{<vector>} of \code{<Date>} values
 #'
 #' @returns `TRUE` if elements of the vector are ordered, `FALSE` otherwise.
 #' @keywords internal

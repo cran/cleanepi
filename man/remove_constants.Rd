@@ -2,37 +2,69 @@
 % Please edit documentation in R/remove_constants.R
 \name{remove_constants}
 \alias{remove_constants}
-\title{Remove empty rows and columns and constant column}
+\title{Remove constant data, including empty rows, empty columns, and
+columns with constant values.}
 \usage{
-remove_constants(data, cutoff = 1L)
+remove_constants(data, cutoff = 1)
 }
 \arguments{
-\item{data}{The input data frame or linelist}
+\item{data}{The input \code{<data.frame>} or \code{<linelist>}}
 
-\item{cutoff}{The cut-off for empty rows and columns removal. If provided,
-only rows and columns where the percent of missing data is greater than
-this cut-off will removed.}
+\item{cutoff}{A \code{<numeric>} value specifying the cut-off for removing
+empty rows and columns. If provided, only rows and columns with a
+percentage of missing data greater than this cut-off will be removed.
+The default is 1.}
 }
 \value{
-The input dataset without the empty rows and columns and the
-constant columns.
+The input dataset with empty rows, empty columns, and constant
+columns removed.
 }
 \description{
-Remove empty rows and columns and constant column
+The function iteratively removes constant data until none remain.
+It records details of the removed constant data as a data frame
+within the report object.
 }
 \examples{
 data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
 
 # introduce an empty column
 data$empty_column <- NA
+# inject some missing values across some columns
+data$study_id[3] = NA_character_
+data$date.of.admission[3] = NA_character_
+data$date.of.admission[4] = NA_character_
+data$dateOfBirth[3] = NA_character_
+data$dateOfBirth[4] = NA_character_
+data$dateOfBirth[5] = NA_character_
 
-# remove the constant columns, empty rows and columns
-dat <- remove_constants(
-  data   = data,
+# with cutoff = 1, line 3, 4, and 5 are not removed
+test <- remove_constants(
+  data = data,
   cutoff = 1
 )
 
+# drop rows or columns with a percentage of constant values
+# equal to or more than 50\%
+test <- remove_constants(
+  data = test,
+  cutoff = 0.5
+)
+
+# drop rows or columns with a percentage of constant values
+# equal to or more than 25\%
+test <- remove_constants(
+  data = test,
+  cutoff = 0.25
+)
+
+# drop rows or columns with a percentage of constant values
+# equal to or more than 15\%
+test <- remove_constants(
+  data = test,
+  cutoff = 0.15
+)
+
 # check the report to see what has happened
-report <- attr(dat, "report")
-summary(report)
+report <- attr(test, "report")
+report$constant_data
 }

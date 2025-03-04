@@ -3,38 +3,42 @@
 #' When the format of the values in a column and/or the target columns are not
 #' defined, we strongly recommend checking a few converted dates manually to
 #' make sure that the dates extracted from a `character` vector or a `factor`
-#' are correct.
+#' are correct.\cr
 #'
-#' @param data A data frame or linelist
-#' @param target_columns A vector of the target date column names. When the
-#'    input data is a `linelist` object, this parameter can be set to
-#'    `linelist_tags` if you wish to standardize the date columns across tagged
-#'    columns only.
-#' @param format A format of the date values in the date columns
-#' @param timeframe A vector of 2 values of type date. If provided, date values
-#'    that do not fall within this timeframe will be set to `NA`.
-#' @param error_tolerance A number between 0 and 1 indicating the proportion of
-#'    entries which cannot be identified as dates to be tolerated; if this
-#'    proportion is exceeded, the original vector is returned, and a message is
-#'    issued; defaults to 0.4 (40 percent).
-#' @param orders The date codes for fine-grained parsing of dates. This allows
-#'    for parsing of mixed dates. If a list is supplied, that list will be used
-#'    for successive tries in parsing. Default orders are:
+#' Check for the presence of date values that could have multiple formats
+#' from the \code{$multi_format_dates} element of the \code{report}.\cr
+#'
+#' @param data The input \code{<data.frame>} or \code{<linelist>}
+#' @param target_columns A \code{<vector>} of the target date column names. When
+#'    the input data is a \code{<linelist>} object, this parameter can be set to
+#'    \code{linelist_tags} if you wish to standardize the date columns across
+#'    tagged columns only. Default is \code{NULL}.
+#' @param format A \code{<vector>} of the expected formats in the date values
+#'    from the date columns. Default is \code{NULL}.
+#' @param timeframe A \code{<vector>} of 2 values of type \code{<Date>}. If
+#'    provided, date values that do not fall within this timeframe will be set
+#'    to \code{NA}.
+#' @param error_tolerance A \code{<numeric>} between 0 and 1 indicating the
+#'    proportion of entries which cannot be identified as dates to be tolerated;
+#'    if this proportion is exceeded, the original vector is returned, and a
+#'    message is issued; defaults to 0.4 (40 percent).
+#' @param orders A \code{<list>} or \code{<vector>} of characters with the date
+#'    codes for fine-grained parsing of dates. This allows for parsing of mixed
+#'    dates. If a \code{<list>} is supplied, that \code{<list>} will be used for
+#'    successive tries in parsing. When this is not provided
+#'    (\code{orders = NULL}), the function will use the following order defined
+#'    in the guesser:
 #'
 #' ```
 #' list(
-#'   world_named_months = c("Ybd", "dby"),
-#'   world_digit_months = c("dmy", "Ymd"),
-#'   US_formats         = c("Omdy", "YOmd")
+#'   quarter_partial_dates = c("Y", "Ym", "Yq"),
+#'   world_digit_months = c("Yq", "ymd", "ydm", "dmy", "mdy", "myd", "dym",
+#'                          "Ymd", "Ydm", "dmY", "mdY", "mYd", "dYm"),
+#'   world_named_months = c("dby", "dyb", "bdy", "byd", "ybd", "ydb",
+#'                          "dbY", "dYb", "bdY", "bYd", "Ybd", "Ydb"),
+#'   us_format = c("Omdy", "YOmd")
 #' )
 #' ```
-#' @param modern_excel When parsing dates from excel, some dates are stored as
-#'    integers. Modern versions of Excel represent dates as the number of days
-#'    since 1900-01-01, but pre-2011 Excel for OSX have the origin set at
-#'    1904-01-01. If this parameter is `TRUE` (default), then this assumes that
-#'    all numeric values represent dates from either a Windows version of Excel
-#'    or a 2011 or later version of Excel for OSX. Set this parameter to `FALSE`
-#'    if the data came from an OSX version of Excel before 2011.
 #'
 #' @returns The input dataset where the date columns have been standardized. The
 #'    date values that are out of the specified timeframe will be reported in
@@ -90,28 +94,25 @@
 #'
 #' # How to use standardize_dates()
 #' dat <- standardize_dates(
-#'   data            = readRDS(system.file("extdata", "test_df.RDS",
-#'                                         package = "cleanepi")),
-#'   target_columns  = "date_first_pcr_positive_test",
-#'   format          = NULL,
-#'   timeframe       = NULL,
+#'   data = readRDS(
+#'     system.file("extdata", "test_df.RDS", package = "cleanepi")
+#'   ),
+#'   target_columns = "date_first_pcr_positive_test",
+#'   format = NULL,
+#'   timeframe = NULL,
 #'   error_tolerance = 0.4,
-#'   orders          = list(world_named_months = c("Ybd", "dby"),
-#'                          world_digit_months = c("dmy", "Ymd"),
-#'                          US_formats         = c("Omdy", "YOmd")),
-#'   modern_excel    = TRUE
+#'   orders = list(
+#'     world_named_months = c("Ybd", "dby"),
+#'     world_digit_months = c("dmy", "Ymd"),
+#'     US_format = c("Omdy", "YOmd")
+#'   )
 #' )
 standardize_dates <- function(data,
-                              target_columns  = NULL,
-                              format          = NULL,
-                              timeframe       = NULL,
-                              error_tolerance = 0.5,
-                              orders          = list(
-                                world_named_months = c("Ybd", "dby"),
-                                world_digit_months = c("dmy", "Ymd"),
-                                US_formats         = c("Omdy", "YOmd")
-                              ),
-                              modern_excel    = TRUE) {
+                              target_columns = NULL,
+                              format = NULL,
+                              timeframe = NULL,
+                              error_tolerance = 0.4,
+                              orders = NULL) {
 
   checkmate::assert_data_frame(data, null.ok = FALSE, min.cols = 1L)
   checkmate::assert_character(target_columns, null.ok = TRUE,
@@ -122,10 +123,10 @@ standardize_dates <- function(data,
   checkmate::assert_numeric(error_tolerance, lower = 0L, upper = 1L,
                             max.len = 2L,
                             any.missing = FALSE, null.ok = TRUE)
-  checkmate::assert_list(orders, min.len = 1L, null.ok = FALSE)
-  checkmate::assert_logical(modern_excel, len = 1L, null.ok = FALSE,
-                            any.missing = FALSE)
+  checkmate::assert_list(orders, min.len = 1L, null.ok = TRUE)
 
+  # set the variable to store the ambiguous column
+  ambiguous_cols <- NULL
   if (!is.null(target_columns)) {
     # get the correct names in case some have been modified - see the
     # `retrieve_column_names()` function for more details
@@ -137,38 +138,55 @@ standardize_dates <- function(data,
       # have the same format. Date standardization will be performed considering
       # the entire column, not individual values.
       format <- date_match_format_and_column(target_columns, format)
+
+      # loop through the target columns to standardise them
       for (i in seq_along(target_columns)) {
-        data[[target_columns[i]]] <- as.Date(data[[target_columns[i]]],
-                                             format = format[i])
+        data[[target_columns[i]]] <- as.Date(
+          data[[target_columns[i]]],
+          format = format[i]
+        )
         # check for outliers and set them to NA
-        data <- date_convert(data, target_columns[i], error_tolerance,
-                             timeframe = timeframe, orders = orders,
-                             modern_excel = modern_excel)
+        res <- date_convert(
+          data,
+          cols = target_columns[i],
+          error_tolerance,
+          timeframe = timeframe,
+          orders = orders
+        )
+        data <- res[["data"]]
+        if (res[["has_ambiguous_values"]]) {
+          ambiguous_cols <- c(ambiguous_cols, target_columns[i])
+        }
       }
     } else {
       for (cols in target_columns) {
-        sep <- unique(as.character(unlist(lapply(data[[cols]],
-                                                 date_detect_separator))))
-        # Guess the date format if it is not provided.
-        # This returns NULL if the format is not resolved.
-        if (length(sep) > 0L) {
-          format <- date_get_format(data, cols, sep)
+        # convert to ISO8601 date using the inferred format
+        res <- date_convert(data, cols, error_tolerance, timeframe,
+                            orders = orders)
+        data <- res[["data"]]
+        if (res[["has_ambiguous_values"]]) {
+          ambiguous_cols <- c(ambiguous_cols, cols)
         }
-
-        # convert to ISO8601 date
-        if (!is.null(format)) {
-          data[[cols]] <- as.Date(data[[cols]], format = format)
-        }
-        data <- date_convert(data, cols, error_tolerance, timeframe,
-                             orders = orders, modern_excel = modern_excel)
       }
     }
   } else {
-    data     <- date_guess_convert(data,
-                                   error_tolerance = error_tolerance,
-                                   timeframe       = timeframe,
-                                   orders          = orders,
-                                   modern_excel    = modern_excel)
+    res <- date_guess_convert(
+      data,
+      error_tolerance = error_tolerance,
+      timeframe = timeframe,
+      orders = orders
+    )
+    data <- res[["data"]]
+    ambiguous_cols <- res[["ambiguous_cols"]]
+  }
+
+  # alert on the presence of ambiguous values in some target columns
+  if (length(ambiguous_cols) > 0) {
+    cli::cli_inform(c(
+      "!" = tr_("Found {.cls numeric} values that could also be of type {.cls Date} in {cli::qty(length(ambiguous_cols))} column{?s}: {.field {toString(ambiguous_cols)}}."), # nolint: line_length_linter
+      i = tr_("It is possible to convert them into {.cls Date} using: {.code lubridate::as_date(x, origin = as.Date(\"1900-01-01\"))}"), # nolint: line_length_linter
+      "*" = tr_("where {.val x} represents here the vector of values from these columns ({.code data$target_column}).") # nolint: line_length_linter
+    ))
   }
 
   return(data)

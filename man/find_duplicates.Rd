@@ -7,23 +7,23 @@
 find_duplicates(data, target_columns = NULL)
 }
 \arguments{
-\item{data}{A data frame or linelist.}
+\item{data}{The input \code{<data.frame>} or \code{<linelist>}.}
 
-\item{target_columns}{A vector of columns names or indices to consider when
-looking for duplicates. When the input data is a \code{linelist} object, this
-parameter can be set to \code{tags}from which duplicates to be removed.
-Its default value is \code{NULL}, which considers duplicates across all
-columns.}
+\item{target_columns}{A \code{<vector>} of columns names or indices to
+consider when looking for duplicates. When the input data is a
+\code{<linelist>} object, this parameter can be set to
+\code{linelist_tags} from which duplicates to be removed. Its default
+value is \code{NULL}, which considers duplicates across all columns.}
 }
 \value{
-A data frame or linelist of all duplicated rows with following 2
-additional columns:
-\enumerate{
-\item \code{row_id}: the indices of the duplicated rows from the input data.
+A \code{<data.frame>} or \code{<linelist>} of all duplicated rows
+with following 2 additional columns:
+\describe{
+\item{row_id}{The indices of the duplicated rows from the input data.
 Users can choose from these indices, which row they consider as
-redundant in each group of duplicates.
-\item \code{group_id}: a unique identifier associated to each group of
-duplicates.
+redundant in each group of duplicates.}
+\item{group_id}{a unique identifier associated to each group of
+duplicates.}
 }
 }
 \description{
@@ -31,8 +31,10 @@ Identify and return duplicated rows in a data frame or linelist.
 }
 \examples{
 dups <- find_duplicates(
-  data           = readRDS(system.file("extdata", "test_linelist.RDS",
-                                       package = "cleanepi")),
+  data = readRDS(
+    system.file("extdata", "test_linelist.RDS", package = "cleanepi")
+  ),
   target_columns = c("dt_onset", "dt_report", "sex", "outcome")
 )
+
 }

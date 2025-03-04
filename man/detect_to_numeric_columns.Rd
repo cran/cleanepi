@@ -5,14 +5,16 @@
 \title{Detect the numeric columns that appears as characters due to the presence of
 some character values in the column.}
 \usage{
-detect_to_numeric_columns(scan_res)
+detect_to_numeric_columns(scan_res, data)
 }
 \arguments{
-\item{scan_res}{a data frame that corresponds to the result from the
-\code{scan_data()} function}
+\item{scan_res}{A \code{<data.frame>} that corresponds to the result from the
+\code{\link{scan_data}} function}
+
+\item{data}{The input \code{<data.frame>} or \code{<linelist>}}
 }
 \value{
-a vector of column names to be converted into numeric
+a \code{<vector>} of column names to be converted into numeric
 }
 \description{
 Detect the numeric columns that appears as characters due to the presence of

@@ -7,36 +7,39 @@
 add_to_report(x, key, value = NULL)
 }
 \arguments{
-\item{x}{A data frame  or linelist}
+\item{x}{A \code{<data.frame>} or \code{<linelist>}}
 
-\item{key}{The name of the cleaning operation}
+\item{key}{A \code{<character>} with the name of the cleaning operation}
 
 \item{value}{The object to add to the report object}
 }
 \value{
-The input report object with an additional element
+The input \code{<data.frame>} or \code{<linelist>} with an
+additional element to the report.
 }
 \description{
 Add an element to the report object
 }
 \examples{
 # scan through the data
-scan_res <- scan_data(data = readRDS(system.file("extdata", "test_df.RDS",
-                                                 package = "cleanepi")))
+scan_res <- scan_data(
+  data = readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
+)
 
 # Perform data cleaning
 cleaned_data <- clean_data(
-  data   = readRDS(system.file("extdata", "test_df.RDS",
-                               package = "cleanepi")),
-  params = list(
-    to_numeric = list(target_columns = "sex", lang = "en"),
-    dictionary = NULL
-  )
+  data = readRDS(
+    system.file("extdata", "test_df.RDS", package = "cleanepi")
+  ),
+  to_numeric = list(target_columns = "sex", lang = "en"),
+  dictionary = NULL
 )
 
 # add the data scanning result to the report
-cleaned_data <- add_to_report(x     = cleaned_data,
-                              key   = "scanning_result",
-                              value = scan_res)
+cleaned_data <- add_to_report(
+  x = cleaned_data,
+  key = "scanning_result",
+  value = scan_res
+)
 
 }

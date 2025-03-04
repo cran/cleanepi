@@ -4,22 +4,22 @@
 \alias{date_make_format}
 \title{Build the auto-detected format}
 \usage{
-date_make_format(f1, f2, tmp_sep)
+date_make_format(f1, f2, f3)
 }
 \arguments{
-\item{f1}{The first part of the date values}
+\item{f1}{A \code{<character>} with the first part of the inferred format}
 
-\item{f2}{The second part of the date values}
+\item{f2}{A \code{<character>} with the second part of the inferred format}
 
-\item{tmp_sep}{The character string that separate the first and second parts
-of the date values.}
+\item{f3}{A \code{<character>} with the third part of the inferred format}
 }
 \value{
-A character string that represent the inferred format of the date
-values.
+A \code{<character>} that represents the inferred format from the
+provided elements. It returns \code{<NULL>} when the format was not
+resolved.
 }
 \description{
-Put together the different date format characters that were identified in
+Put together the different date format characters that were identified from
 the target date column.
 }
 \keyword{internal}

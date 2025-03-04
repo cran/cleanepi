@@ -4,41 +4,42 @@
 \alias{date_guess_convert}
 \title{Guess if a character vector contains Date values, and convert them to date}
 \usage{
-date_guess_convert(data, error_tolerance, timeframe, orders, modern_excel)
+date_guess_convert(data, error_tolerance, timeframe, orders)
 }
 \arguments{
-\item{data}{A data frame}
+\item{data}{A \code{<data.frame>}}
 
-\item{error_tolerance}{A number between 0 and 1 indicating the proportion of
-entries which cannot be identified as dates to be tolerated; if this
-proportion is exceeded, the original vector is returned, and a message is
-issued; defaults to 0.4 (40 percent).}
+\item{error_tolerance}{A \code{<numeric>} between 0 and 1 indicating the
+proportion of entries which cannot be identified as dates to be tolerated;
+if this proportion is exceeded, the original vector is returned, and a
+message is issued; defaults to 0.4 (40 percent).}
 
-\item{timeframe}{A vector of 2 values of type date. If provided, date values
-that do not fall within this timeframe will be set to \code{NA}.}
+\item{timeframe}{A \code{<vector>} of 2 values of type \code{<Date>}. If
+provided, date values that do not fall within this timeframe will be set
+to \code{NA}.}
 
-\item{orders}{The date codes for fine-grained parsing of dates. This allows
-for parsing of mixed dates. If a list is supplied, that list will be used
-for successive tries in parsing. Default orders are:
+\item{orders}{A \code{<list>} or \code{<vector>} of characters with the date
+codes for fine-grained parsing of dates. This allows for parsing of mixed
+dates. If a \code{<list>} is supplied, that \code{<list>} will be used for
+successive tries in parsing. When this is not provided
+(\code{orders = NULL}), the function will use the following order defined
+in the guesser:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{list(
-  world_named_months = c("Ybd", "dby"),
-  world_digit_months = c("dmy", "Ymd"),
-  US_formats         = c("Omdy", "YOmd")
+  quarter_partial_dates = c("Y", "Ym", "Yq"),
+  world_digit_months = c("Yq", "ymd", "ydm", "dmy", "mdy", "myd", "dym",
+                         "Ymd", "Ydm", "dmY", "mdY", "mYd", "dYm"),
+  world_named_months = c("dby", "dyb", "bdy", "byd", "ybd", "ydb",
+                         "dbY", "dYb", "bdY", "bYd", "Ybd", "Ydb"),
+  us_format = c("Omdy", "YOmd")
 )
 }\if{html}{\out{</div>}}}
-
-\item{modern_excel}{When parsing dates from excel, some dates are stored as
-integers. Modern versions of Excel represent dates as the number of days
-since 1900-01-01, but pre-2011 Excel for OSX have the origin set at
-1904-01-01. If this parameter is \code{TRUE} (default), then this assumes that
-all numeric values represent dates from either a Windows version of Excel
-or a 2011 or later version of Excel for OSX. Set this parameter to \code{FALSE}
-if the data came from an OSX version of Excel before 2011.}
 }
 \value{
-The input data frame where the character columns with date values
-have been converted into Date.
+A \code{<list>} with the following two elements: the input data
+frame where the character columns with date values have been converted
+into \code{<Date>}, and a vector of column names where there are numeric
+values that can also be of type Date.
 }
 \description{
 Guess if a character vector contains Date values, and convert them to date

@@ -6,7 +6,7 @@
 \alias{cleanepi-package}
 \title{cleanepi: Clean and Standardize Epidemiological Data}
 \description{
-Cleaning and standardizing tabular data package, tailored specifically for curating epidemiological data. It streamlines various data cleaning tasks that are typically expected when working with datasets in epidemiology. It returns the processed data in the same format, ensuring seamless integration into existing workflows. Additionally, it generates a comprehensive report detailing the outcomes of each cleaning task.
+Cleaning and standardizing tabular data package, tailored specifically for curating epidemiological data. It streamlines various data cleaning tasks that are typically expected when working with datasets in epidemiology. It returns the processed data in the same format, and generates a comprehensive report detailing the outcomes of each cleaning task.
 }
 \seealso{
 Useful links:
@@ -22,21 +22,22 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Bubacarr Bah \email{Bubacarr.Bah1@lshtm.ac.uk} (\href{https://orcid.org/0000-0003-3318-6668}{ORCID})
+  \item Abdoelnaser Degoot \email{abdoelnaser-mahmood.degoot@lshtm.ac.uk} (\href{https://orcid.org/0000-0001-8788-2496}{ORCID})
   \item Bankolé Ahadzie \email{Bankole.Ahadzie@lshtm.ac.uk}
   \item Nuredin Mohammed \email{Nuredin.Mohammed@lshtm.ac.uk}
-  \item Abdoelnaser Degoot \email{abdoelnaser-mahmood.degoot@lshtm.ac.uk} (\href{https://orcid.org/0000-0001-8788-2496}{ORCID})
+  \item Bubacarr Bah \email{Bubacarr.Bah1@lshtm.ac.uk} (\href{https://orcid.org/0000-0003-3318-6668}{ORCID})
 }
 
 Other contributors:
 \itemize{
-  \item Thibaut Jombart \email{thibautjombart@gmail.com} (Thibault is the owner of the code in guess_dates.R file.) [copyright holder]
-  \item Hugo Gruson \email{hugo@data.org} (\href{https://orcid.org/0000-0002-4094-1476}{ORCID}) [reviewer]
+  \item Thibaut Jombart \email{thibautjombart@gmail.com} (Thibault contributed in development of date_guess().) [contributor]
+  \item Hugo Gruson \email{hugo@data.org} (\href{https://orcid.org/0000-0002-4094-1476}{ORCID}) [contributor, reviewer]
   \item Pratik R. Gupte \email{pratik.gupte@lshtm.ac.uk} (\href{https://orcid.org/0000-0001-5294-7819}{ORCID}) [reviewer]
   \item James M. Azam \email{james.azam@lshtm.ac.uk} (\href{https://orcid.org/0000-0001-5782-7330}{ORCID}) [reviewer]
   \item Joshua W. Lambert \email{joshua.lambert@lshtm.ac.uk} (\href{https://orcid.org/0000-0001-5218-3046}{ORCID}) [reviewer]
   \item Chris Hartgerink \email{chris@data.org} (\href{https://orcid.org/0000-0003-1050-6809}{ORCID}) [reviewer]
-  \item London School of Hygiene and Tropical Medicine, LSHTM [copyright holder]
+  \item Andree Valle-Campos \email{avallecam@gmail.com} (\href{https://orcid.org/0000-0002-7779-481X}{ORCID}) [reviewer, contributor]
+  \item London School of Hygiene and Tropical Medicine, LSHTM (00a0jsq62) [copyright holder]
   \item data.org [funder]
 }
 

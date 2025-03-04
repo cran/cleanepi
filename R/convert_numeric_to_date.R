@@ -1,24 +1,27 @@
 #' Convert numeric to date
 #'
-#' @param data The input data frame or linelist
-#' @param target_columns A vector of columns names to be converted from numeric
-#'    to date. When the input data is a `linelist` object, this parameter can be
-#'    set to `linelist_tags` if you wish to only convert the tagged columns.
-#' @param ref_date A reference date. This can also be a character string with
-#'    the name of the reference column.
-#' @param forward A Boolean to indicate whether the counts started after the
-#'    reference date (TRUE) or not (FALSE). The default is TRUE.
+#' @param data The input \code{<data.frame>} or \code{<linelist>}
+#' @param target_columns A \code{<vector>} of columns names to be converted from
+#'    numeric to date. When the input data is a \code{<linelist>} object, this
+#'    parameter can be set to \code{linelist_tags} to apply the conversion
+#'    exclusively to the tagged columns.
+#' @param ref_date A \code{<Date>} value with reference date. This can also be a
+#'    character string with the name of the reference column.
+#' @param forward A \code{<logical>} to indicate whether the counts started
+#'    after the reference date (\code{TRUE}) or not (\code{FALSE}). The default
+#'    is \code{TRUE}.
 #'
-#' @returns A data frame where the column of interest are updated
+#' @returns A \code{<data.frame>} or \code{<linelist>} where the column of
+#'    interest are updated
 #' @export
 #'
 #' @examples
 #' data <- readRDS(system.file("extdata", "test_df1.RDS", package = "cleanepi"))
 #' data <- convert_numeric_to_date(
-#'   data           = data,
-#'   target_columns = "recruted_on_day",
-#'   ref_date       = as.Date("2022-10-13"),
-#'   forward        = TRUE
+#'   data = data,
+#'   target_columns = "recruited_on_day",
+#'   ref_date = as.Date("2022-10-13"),
+#'   forward = TRUE
 #' )
 convert_numeric_to_date <- function(data, target_columns, ref_date,
                                     forward = TRUE) {

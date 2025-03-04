@@ -7,10 +7,11 @@
 numbers_only(x)
 }
 \arguments{
-\item{x}{A string of numbers}
+\item{x}{A \code{<character>} value}
 }
 \value{
-\code{TRUE} if the string only contains numbers, \code{FALSE} otherwise
+\code{TRUE} if the string only contains numbers, \code{FALSE}
+otherwise
 }
 \description{
 Detects whether a string contains only numbers or not.

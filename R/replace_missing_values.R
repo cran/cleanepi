@@ -1,27 +1,27 @@
-
-#' Replace missing values with `NA`
+#' Replace missing values with \code{NA}
 #'
-#' @param data A data frame or linelist
-#' @param target_columns A vector of column names. If provided, the substitution
-#'    of missing values will only be executed in those specified columns. When
-#'    the input data is a `linelist` object, this parameter can be set to
-#'    `linelist_tags` if you wish to replace missing values with NA on tagged
-#'    columns only.
-#' @param na_strings This is a vector of strings that represents the missing
+#' @param data The input \code{<data.frame>} or \code{<linelist>}
+#' @param target_columns A \code{<vector>} of column names. If provided, missing
+#'    values will be substituted only in the specified columns. When the input
+#'    data is a \code{<linelist>} object, this parameter can be set to
+#'    \code{linelist_tags} to replace missing values with \code{NA} in the
+#'    tagged columns only.
+#' @param na_strings A \code{<vector>} of characters that represent the missing
 #'    values in the columns of interest. By default, it utilizes
-#'    `cleanepi::common_na_strings`. However, if the missing values string in
-#'    the columns of interest is not included in this predefined vector,
+#'    \code{cleanepi::common_na_strings}. However, if the missing values string
+#'    in the columns of interest is not included in this predefined vector,
 #'    it can be used as the value for this argument.
 #'
-#' @returns The input data where missing values are replaced by `NA`.
+#' @returns The input data where missing values are replaced by \code{NA}.
 #' @export
 #'
 #' @examples
 #' cleaned_data <- replace_missing_values(
-#'   data           = readRDS(system.file("extdata", "test_df.RDS",
-#'                                        package = "cleanepi")),
+#'   data = readRDS(
+#'     system.file("extdata", "test_df.RDS", package = "cleanepi")
+#'   ),
 #'   target_columns = "sex",
-#'   na_strings     = "-99"
+#'   na_strings = "-99"
 #' )
 #'
 replace_missing_values <- function(data,
@@ -30,31 +30,47 @@ replace_missing_values <- function(data,
   # get the correct names in case some have been modified - see the
   # `retrieve_column_names()` function for more details
   target_columns <- retrieve_column_names(data, target_columns)
-  cols           <- get_target_column_names(data, target_columns, cols = NULL)
+  cols <- get_target_column_names(data, target_columns, cols = NULL)
 
-  # get the indices of the columns that contain the missing value characters
-  tmp <- data |>
+  # identify the columns containing the specified missing value characters
+  tmp <- data %>%
     dplyr::select(dplyr::all_of(cols))
   indices <- colSums(apply(tmp, 2, match, na_strings), na.rm = TRUE) > 0
-  cols    <- names(tmp)[indices]
 
   # send a warning when none of the columns contains the provided missing value
-  # string
+  # strings
   if (any(indices)) {
-    # replace missing values with NA
-    data <- data |>
-      dplyr::mutate(dplyr::across(dplyr::all_of(cols), ~
-                                    dplyr::na_if(as.character(.x), na_strings)))
+    # replace missing value strings with NA
+    cols <- names(tmp)[indices]
+    data[cols] <- lapply(data[cols], replace_with_na, na_strings)
 
-    # make report
-    data <- add_to_report(x     = data,
-                          key   = "missing_values_replaced_at",
-                          value = paste(cols, sep = ", "))
+    # report columns where the replacement happened
+    data <- add_to_report(
+      x = data,
+      key = "missing_values_replaced_at",
+      value = toString(cols)
+    )
   } else {
-    warning("Could not detect missing value character!",
-            "\nPlease use the appropriate strings that represents the missing",
-            "values from your data.", call. = FALSE)
+    cli::cli_inform(c(
+      "!" = tr_("Could not detect the provided missing value {cli::qty(length(na_strings))} character{?s}."), # nolint: line_length_linter
+      i = tr_("Does your data contain missing value characters other than the specified ones?") # nolint: line_length_linter
+    ))
   }
 
   return(data)
+}
+
+#' Detect and replace values with \code{NA} from a vector
+#'
+#' @param x A \code{<vector>} of numeric or character values
+#' @param na_strings A \code{<vector>} of the values to be replaced
+#'
+#' @return A \code{<vector>} where the specified values were replaced with
+#'    \code{NA} if found.
+#' @keywords internal
+#'
+replace_with_na <- function(x, na_strings) {
+  are_na_strings <- x %in% na_strings
+  x[are_na_strings] <- NA
+  return(x)
 }

@@ -19,7 +19,7 @@ row_id <- group_id <- NULL
 
 # An overview
 
-Data cleaning is a critical step of data analysis, especially considering the messy nature of real-world data, which often includes duplicates, errors, incomplete entries, and irrelevant formats. Addressing these issues is essential for producing accurate, reliable, and reproducible results. However, data cleaning can pose a substantial barrier in data analysis due to the time-consuming nature of the process.
+Data cleaning is a critical step of data analysis, especially considering the messy nature of real-world data, which often includes duplicates, errors, incomplete entries, irrelevant formats, etc. Addressing these issues is essential for producing accurate, reliable, and reproducible results. However, data cleaning can pose a substantial barrier in data analysis due to the time-consuming nature of the process.
 
 **{cleanepi}** is an R package designed specifically to address this challenge by offering tools to clean, curate, and standardize datasets. Tailored specifically for epidemiological data and compatible with data frame-like structures, **{cleanepi}** offers a suite of functions designed to streamline common data cleaning tasks.
 
@@ -33,117 +33,133 @@ library("cleanepi")
 
 The main function in **{cleanepi}** is `clean_data()` that can perform the following tasks:
 
-1. Scan the input data to determine the percent of missing, numeric, character, logical and date values in every column of the input data frame.
-2. Clean up column names and convert them to more intuitive formats. This includes many sub-tasks such as replacing a space, dot, or hyphen between two words with underscore; converting camel-cases to snake-cases; substituting foreign characters with their corresponding English characters; and splitting a long word into multiple short words by capital characters within, if any, and connecting them with underscores.   
-3. Find and remove duplicated rows across all columns or some specific columns.
-4. Remove empty rows and columns as well as constant columns, i.e. columns with the same value across all rows.   
-5. Replace missing entries with `NA`. 
-6. Check whether the sequence of date events are correct in all rows of the input data.
-7. Convert `character` columns into `Date` if the column actually contains values of type `Date` to some extent (default is at least 60% of the values are `Date`).
-8. Detect and remove rows with subject IDs that do not comply with the expected format.
-9. Perform dictionary-based cleaning: replace keys in specific columns with their corresponding values stored in a data dictionary file, and replace misspelled values with their correct ones.
-10. Convert numbers written in characters into numeric.
-11. Calculate the time span between columns or values of type Date.
-12. Convert numeric values into Date.
-13. Print the data cleaning report.
+1. Clean up column names and convert them to more readable formats. This includes many sub-tasks such as replacing a space, dot, or hyphen between two words with underscore; converting camel-cases to snake-cases; substituting foreign characters with their corresponding English characters; and splitting a long word into multiple short words by capital characters within, if any, and connecting them with underscores.   
+2. Find and remove duplicated rows across all or some specific columns.
+3. Remove empty rows and columns as well as constant columns, i.e. columns with the same value across all rows.   
+4. Replace missing entries with `NA`. 
+5. Standardizes date formats and verifies that the sequence of date events follows the correct chronological order across columns for all rows in the input data.
+6. Convert `character` columns into `Date` if the column actually contains values of type `Date` to some extent (default is at least 60% of the values are `Date`).
+7. Detect and remove rows with subject ids that do not comply with the expected format.
+8. Perform dictionary-based cleaning: replace keys in specific columns with their corresponding values stored in a data dictionary provided as a data frame, detect and replace misspelled values with their correct ones.
+9. Convert numbers written in characters into numeric.
+10. Calculate the time span between columns or values of type Date.
+11. Convert numeric values into Date.
+
+In addition, the package also has two surrogate functions:  
+1. `scan_data()`: scan the input data to determine the percent of missing, numeric, character, logical and date values in every character column of the input data frame.  
+2. `print_report()`: print the data cleaning report.
 
 
-```{r eval=TRUE, comment=""}
+```{r eval=TRUE}
 # IMPORTING THE TEST DATASET
-test_data <- readRDS(system.file("extdata", "test_df.RDS",
-                                 package = "cleanepi"))
+test_data <- readRDS(
+  system.file("extdata", "test_df.RDS", package = "cleanepi")
+)
 ```
 
 ```{r eval=TRUE, echo=FALSE}
-test_data |>
-  kableExtra::kbl() |>
-  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) |>
+test_data %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
                          fixed_thead = TRUE)
 ```
 
-```{r eval=TRUE, comment=""}
+```{r eval=TRUE}
 # SCAN THE DATA
 scan_result <- scan_data(test_data)
 ```
 
 ```{r eval=TRUE, echo=FALSE}
-scan_result |>
-  kableExtra::kbl() |>
-  kableExtra::kable_paper("striped", font_size = 14, full_width = FALSE) |>
+scan_result %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_paper("striped", font_size = 14, full_width = FALSE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
                          fixed_thead = TRUE)
 ```
 
-In **{cleanepi}**, every cleaning operation is encapsulated within a module, with detailed descriptions provided in the package design vignette. Each module also specifies the parameters required for its main function, outlined in the sections below.
+In **{cleanepi}**, every cleaning operation is encapsulated within a module, with detailed descriptions provided in the package [design vignette](design_principle.html). The parameters required for the main functions of each module are outlined in the sections below.
 
-In the following chunk, we define a list of cleaning operations that we want to perform on the input data.
+The `clean_data()` function, described above, can take the following arguments:
 
-```{r eval=TRUE, comment=""}
+1. **data**: a `data.frame` or `linelist`.
+2. **standardize_column_names**: a list of parameters to be used for standardizing the column names. These arguments are the inputs for the `standardize_column_names()` function.
+3. **replace_missing_values**: a list of parameters to be used when replacing the missing values by `NA`. Elements of this list are the inputs for the `replace_missing_values()` function.
+4. **remove_duplicates**: a list with the arguments that define the columns and other parameters to be considered when looking for duplicates. They are the input values for the `remove_duplicates()` function.
+5. **remove_constants**: a list with the parameters that define whether to remove constant data or not. The values are the input for the `remove_constants()` function.
+6. **standardize_dates**: a list of parameters that will be used to standardize the date values from the input data. They represent the input values for the `standardize_dates()` function.
+7. **standardize_subject_ids**: a list of parameters that are needed to check whether the subject IDs comply with the expected format. These arguments are the input values of the `check_subject_ids()`.
+8. **to_numeric**: a list with the parameters needed to convert the specified columns into numeric. When provided, the parameters will be the input values for the `convert_to_numeric()` function.
+9. **dictionary**: a data frame that will be used to substitute the current values in the specified columns with those in the dictionary. It is the main argument for the `clean_using_dictionary()` function.
+10. **check_date_sequence**: a list of arguments to be used when determining whether the sequence of the target date events is respected across all rows of the input data. The elements of this list are the input for the `check_date_sequence()` function.
+
+**It is important to note that only cleaning operations that are explicitly defined will be performed.**
+
+The below code chunk shows how to define a set of cleaning operations that we want to perform on the input data.
+
+```{r eval=TRUE}
 # PARAMETERS FOR REPLACING MISSING VALUES WITH NA
-rm_na <- list(target_columns = NULL, na_strings = "-99")
+replace_missing_values <- list(target_columns = NULL, na_strings = "-99")
 
 # PARAMETERS FOR COLUMN NAMES STANDARDIZATION
-standardize_col_names <- list(keep = NULL, rename = NULL)
+standardize_column_names <- list(keep = NULL, rename = NULL)
 
 # PARAMETERS FOR DUBLICATES DETECTION AND REMOVAL
-rm_dup <- list(target_columns   = NULL)
+remove_duplicates <- list(target_columns = NULL)
 
 # PARAMETERS FOR STANDARDING DATES
-stdn_date <- list(target_columns  = NULL,
-                  error_tolerance = 0.4,
-                  format          = NULL,
-                  timeframe       = as.Date(c("1973-05-29", "2023-05-29")),
-                  orders          = list(world_named_months = c("Ybd", "dby"),
-                                         world_digit_months = c("dmy", "Ymd"),
-                                         US_formats       = c("Omdy", "YOmd")),
-                  modern_excel    = TRUE)
+standardize_dates <- list(
+  target_columns = NULL,
+  error_tolerance = 0.4,
+  format = NULL,
+  timeframe = as.Date(c("1973-05-29", "2023-05-29")),
+  orders = list(
+    world_named_months = c("Ybd", "dby"),
+    world_digit_months = c("dmy", "Ymd"),
+    US_formats = c("Omdy", "YOmd")
+  )
+)
 
-# PARAMETERS FOR STANDARDING SUBJECT IDs
-stdn_ids <- list(target_columns = "study_id",
-                 prefix         = "PS",
-                 suffix         = "P2",
-                 range          = c(1, 100),
-                 nchar          = 7)
+# PARAMETERS FOR STANDARDING SUBJECT ids
+standardize_subject_ids <- list(
+  target_columns = "study_id",
+  prefix = "PS",
+  suffix = "P2",
+  range = c(1, 100),
+  nchar = 7
+)
+
+# CONVERT THE 'sex' COLUMN INTO NUMERIC
+to_numeric <- list(target_columns = "sex", lang = "en")
 
 # PARAMETERS FOR CONSTANT COLUMNS, EMPTY ROWS AND COLUMNS REMOVAL
-remove_cte <- list(cutoff = 1)
+remove_constants <- list(cutoff = 1)
 
-# LAOD THE DATA DICTIONARY
-test_dictionary <- readRDS(system.file("extdata", "test_dictionary.RDS",
-                                       package = "cleanepi"))
-
-# DEFINE THE LIST OF PARAMETERS
-params <- list(
-  standardize_column_names = standardize_col_names,
-  remove_constants         = remove_cte,
-  replace_missing_values   = rm_na,
-  remove_duplicates        = rm_dup,
-  standardize_dates        = stdn_date,
-  standardize_subject_ids  = stdn_ids,
-  dictionary               = test_dictionary
+# LAOD THE DATA DICTIONARY FOR DICTIONARY-BASED CLEANING
+dictionary <- readRDS(
+  system.file("extdata", "test_dictionary.RDS", package = "cleanepi")
 )
 ```
 
-The `clean_data()` function, as shown below, requires 2 arguments:
-
-1. **data**: A `data.frame` or `linelist`.
-2. **params**: A list of parameters that define the cleaning operations to
-    be performed.
-
-```{r eval=TRUE, comment=""}
+```{r eval=TRUE}
 # CLEAN THE INPUT DATA FRAME
 cleaned_data <- clean_data(
-  data   = test_data,
-  params = params
+  data = test_data,
+  remove_constants = remove_constants,
+  replace_missing_values = replace_missing_values,
+  remove_duplicates = remove_duplicates,
+  standardize_dates = standardize_dates,
+  standardize_subject_ids = standardize_subject_ids,
+  to_numeric = to_numeric,
+  dictionary = dictionary
 )
 ```
 
-It returns the cleaned dataset. The report generated from the data cleaning operations is a `list object` that is attached to the cleaned data and can be accessed using the `attr()` function. The report contains details of each cleaning operation that was performed during the process. However, users can access the report using the code below:
+It returns the cleaned dataset. The report generated from the data cleaning operations is a `list object` that is attached to the cleaned data and can be accessed using the `attr()` or `attributes()` function. The report show details of outcome of each cleaning operation that was performed during the process. Users can access the report using the code below:
 
 ```{r eval=TRUE}
 # ACCESS THE DATA CLEANING REPORT
@@ -153,10 +169,10 @@ report <- attr(cleaned_data, "report")
 summary(report)
 ```
 
-The report can also be displayed in an HTML format using the `print_report()` function as shown below:
+They can also display the report in a web browser using the `print_report()` function as shown below:
 
 ```{r eval=FALSE}
-print_report(report)
+print_report(cleaned_data)
 ```
 
 
@@ -177,7 +193,7 @@ The `remove_constants()` function can be used to remove such “noise”. The fu
 1. **data**: the input data frame or linelist,
 2. **cutoff**: a numeric, between `0` and `1`, to be used when removing empty rows and columns. When provided, only rows and columns where the percent of missing data is greater than this cut-off will removed. Rows and columns with 100% missing values will be remove by default.
 
-```{r echo=FALSE, eval=TRUE}
+```{r echo=TRUE, eval=TRUE}
 # IMPORT THE INPUT DATA
 data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
 
@@ -185,34 +201,37 @@ data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
 data$empty_column <- NA
 
 # remove the constant columns, empty rows and columns
-dat <- remove_constants(data   = data,
-                        cutoff = 1)
+dat <- remove_constants(
+  data = data,
+  cutoff = 1
+)
 ```
 
 ```{r echo=FALSE, eval=TRUE}
-dat |>
-  kableExtra::kbl() |>
-  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) |>
+dat %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
                          fixed_thead = TRUE)
 ```
 
-The `remove_constants()` function returns a dataset where all constant columns, empty rows and columns are removed.
+The `remove_constants()` function returns a dataset where all constant columns, empty rows and columns are iteratively removed.
+Note that when the first iteration of constant data removal results in a dataset with new empty rows and/or columns and constant columns, this process will be repeated several times until there is no more constant data. Rows and columns that were deleted at any iterations will be mentioned in the report object.
 
 
 ## Cleaning column names
 
-The syntax used to name the columns of a dataset during its creation depending on many factors such as the language, the naming convention, etc.
+The syntax used to name the columns of a dataset during its creation depends on many factors such as the language, the naming convention, etc.
 We provide, in **{cleanepi}**, the `standardize_column_names()` function to clean up column names and convert them to more intuitive formats. It performs many sub-tasks including: replacing a space, dot, or hyphen between two words with underscore; converting camel-cases to snake-cases; substituting foreign characters with their corresponding English characters; and splitting along word into multiple short words by capital characters within, if any, and 
 connecting them with underscores. The function can take the following arguments:
 
 1. **data**: the input data frame or linelist
 2. **keep**: a vector of column names to maintain as they are. When dealing with a linelist, this can be set to `linelist_tags`, to maintain the tagged column names. The Default is `NULL`.
-3. **rename**: a `vector` of focal column names and a vector of column names to be renamed in the form of `new_name = "old_name"`. If not provided, all columns will undergo standardization.
+3. **rename**: a vector of column names to be renamed in the form of `new_name = "old_name"`. If not provided, all columns will undergo standardization.
 
-```{r eval=TRUE, comment="col_name_cleaning"}
+```{r eval=TRUE}
 # IMPORT AND PRINT THE INITAL COLUMN NAMES
 data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
 print(colnames(data))
@@ -222,16 +241,16 @@ cleaned_data <- standardize_column_names(
   data = data,
   keep = "date.of.admission"
 )
-print(colnames(data))
+print(colnames(cleaned_data))
 
 # KEEP 'date.of.admission' AS IS, BUT RENAME 'dateOfBirth' AND 'sex' TO
 # 'DOB' AND 'gender' RESPECTIVELY
 cleaned_data <- standardize_column_names(
-  data   = data,
-  keep   = "date.of.admission",
+  data = data,
+  keep = "date.of.admission",
   rename = c(DOB = "dateOfBirth", gender = "sex")
 )
-print(colnames(data))
+print(colnames(cleaned_data))
 ```
 
 By providing the function with these parameters, the users can redefine the name of the columns and get easy to work with column names. This enables a more comprehensive naming system that is tailored to the needs of the user.
@@ -239,39 +258,37 @@ By providing the function with these parameters, the users can redefine the name
 
 ## Replacing missing entries with `NA`
 
-It is common to have missing values in an input dataset. By default, R expects missing values to be represented by `NA`, However, this is not always the case as some dataset can contain a specific character string that denotes the missing value. In the presence of such a scenario, user can call the `replace_missing_values()` function to substitute these missing values with `NA`. This will make the data suitable for any data science operations. The function takes the following arguments:
+It is common to have missing values in an input dataset. By default, R expects missing values to be represented by `NA`, However, this is not always the case as some dataset can contain a specific character string that denotes the missing value. In the presence of such a scenario, users can call the `replace_missing_values()` function to substitute these missing values with `NA`. This will make the data suitable for any data science operations. The function takes the following arguments:
 
 1. **data**: the input data frame or linelist.
-2. **target_columns**: a vector of column names. If provided, the substitution of missing values will only be executed in those specified columns. When the input data is a `linelist` object, this parameter can be set to `linelist_tags` if you wish to replace missing values with `NA` on tagged columns only. The default value `NULL` i.e. replace missing values across all columns.
+2. **target_columns**: a vector of column names. If provided, the substitution of missing values will only be executed in those specified columns. When the input data is a `linelist` object, this parameter can be set to `linelist_tags` if you wish to replace missing values with `NA` on tagged columns only. The default value is `NULL` i.e. replace missing values across all columns.
 3. **na_strings**: a vector of character strings that represents the missing values in the columns of interest. By default, it utilizes `cleanepi::common_na_strings`. However, if the missing values string in the columns of interest is not included in this predefined vector, it can be used as the value for this argument.
 
-```{r eval=TRUE, comment="default_missing_values"}
+```{r eval=TRUE}
 # VISUALIZE THE PREDEFINED VECTOR OF MISSING CHARACTERS
 print(cleanepi::common_na_strings)
 ```
 
-```{r eval=TRUE, comment="replace_missing"}
+```{r eval=TRUE}
 # REPLACE ALL OCCURENCES OF "-99" WITH NA IN THE "sex" COLUMN
 cleaned_data <- replace_missing_values(
-  data           = readRDS(system.file("extdata", "test_df.RDS",
-                                       package = "cleanepi")),
+  data = readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")),
   target_columns = "sex",
-  na_strings     = "-99"
+  na_strings = "-99"
 )
 
 # REPLACE ALL OCCURENCES OF "-99" WITH NA FROM ALL COLUMNS
 cleaned_data <- replace_missing_values(
-  data           = readRDS(system.file("extdata", "test_df.RDS",
-                                       package = "cleanepi")),
+  data = readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")),
   target_columns = NULL,
-  na_strings     = "-99"
+  na_strings = "-99"
 )
 ```
 
 ```{r echo=FALSE, eval=TRUE}
-cleaned_data |>
-  kableExtra::kbl() |>
-  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) |>
+cleaned_data %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
@@ -285,28 +302,29 @@ The default date format in R is `Ymd` (the ISO8601 format). However, it is very 
 
 The `standardize_dates()` function provides a comprehensive set of options for converting date columns into a specified format and handling various scenarios, such as different date formats and mixed data types in a column.
 
-Entries which cannot be processed result in `NA`. An error threshold can be used to define the maximum number of resulting `NA` (i.e. entries without an identified date) that can be tolerated. If this threshold is exceeded, the original vector is returned.
+Entries which cannot be processed result in `NA`. An error threshold can be used to define the maximum number of resulting `NA` (i.e. entries without an identified date) that can be tolerated. If this threshold is exceeded, the initial values will be returned.
 
 The function expects the following arguments:
 
 1. **data**: A data frame or linelist  (required).   
-2. **target_columns**: A vector of the names of the columns to be converted (optional). When not provided, the function will attempt to detect date columns and perform the  conversion if needed.
+2. **target_columns**: A vector of the names of the columns to be converted (optional). When not provided, the function will attempt to detect date columns and perform the conversion if the conditions above are met.
 3. **format**: A format of the values in the specified columns (optional). If not provided, the function will attempt to infer the format.
 4. **timeframe**: The expected time frame within which the date values should fall. Values  outside of this range will be set to `NA` (optional).
 5. **error_tolerance**: The maximum percentage of `NA` values (non date values) that can be allowed in a converted column. Default is 40% i.e. `0.4`.
-6. **orders**: The date codes for fine-grained parsing of dates. It is used for parsing of mixed dates. If a list is supplied, that list will be used for successive tries in parsing. Default is:
+6. **orders**: A character vector or list of codes for fine-grained parsing of dates. It is used for parsing of mixed dates. If a list is supplied, that list will be used for successive tries in parsing. Default is:
 
 ```{r}
 orders <- list(
-  world_named_months = c("Ybd", "dby"),
-  world_digit_months = c("dmy", "Ymd"),
-  US_formats         = c("Omdy", "YOmd")
+  quarter_partial_dates = c("Y", "Ym", "Yq"),
+  world_digit_months = c("ymd", "ydm", "dmy", "mdy", "myd", "dym", "Ymd", "Ydm",
+                         "dmY", "mdY", "mYd", "dYm"),
+  world_named_months = c("dby", "dyb", "bdy", "byd", "ybd", "ydb", "dbY", "dYb",
+                         "bdY", "bYd", "Ybd", "Ydb"),
+  us_format = c("Omdy", "YOmd")
 )
 ```
 
-7. **modern_excel**: A Boolean that determines whether all numeric values represent dates from either a Windows version of Excel or a 2011 or later version of Excel for OSX. Set this parameter to `FALSE` if the data came from an OSX version of Excel before 2011. This is only relevant when parsing dates from excel. Default is `TRUE`.
-
-> ⚠️ The `error_tolerance` must be used with caution. When it is set, and the percentage of non-date values (NA i.e. values that were not converted into date) in a character column is greater than this threshold, the column will be returned as it is.
+> ⚠️ The `error_tolerance` must be used with caution. When it is set, and the percentage of non-date values (NA i.e. values that were not converted into date) in a character column is greater than this threshold, the column will be returned as it is. The values outside of this timeframe can be accessed from the report object via its `out_of_range_dates` element.
 
 > The value for the `orders` argument can be modified to suit the user's needs. Other date formats can be specified too. For instance, if you want to prioritize American-style dates with numeric months, you can switch the second and third elements of the default orders as shown below:
 
@@ -320,34 +338,36 @@ us_ord <- orders[c(1L, 3L, 2L)]
 orders$ymdhms <- c("Ymdhms", "Ymdhm")
 ```
 
-This function provides users with the flexibility to standardize date columns in their dataset according to specified requirements, including format, timeframe, and error tolerance for conversion from character to date columns.
+This function provides users with the flexibility to standardize date columns in their dataset according to specified requirements, including `format`, `timeframe`, and `error tolerance` for conversion from character to date columns.
 
-```{r eval=TRUE, comment="date_standardisation"}
+```{r eval=TRUE}
 # STANDARDIZE VALUES IN THE 'date_first_pcr_positive_test' COLUMN
-test_data <- readRDS(system.file("extdata", "test_df.RDS",
-                                 package = "cleanepi"))
+test_data <- readRDS(
+  system.file("extdata", "test_df.RDS", package = "cleanepi")
+)
 
 head(test_data$date_first_pcr_positive_test)
 
 res <- standardize_dates(
-  data            = test_data,
-  target_columns  = "date_first_pcr_positive_test",
-  format          = NULL,
-  timeframe       = NULL,
+  data = test_data,
+  target_columns = "date_first_pcr_positive_test",
+  format = NULL,
+  timeframe = NULL,
   error_tolerance = 0.4,
-  orders          = list(world_named_months = c("Ybd", "dby"),
-                         world_digit_months = c("dmy", "Ymd"),
-                         US_formats         = c("Omdy", "YOmd")),
-  modern_excel    = TRUE
+  orders = list(
+    world_named_months = c("Ybd", "dby"),
+    world_digit_months = c("dmy", "Ymd"),
+    US_formats = c("Omdy", "YOmd")
+  )
 )
 ```
 
-This function returns the input dataset where the (specified) columns are converted into Date if the condition is met.
+This function returns the input dataset where the (specified) columns are converted into Date if the conditions are met.
 
 ```{r echo=FALSE, eval=TRUE}
-res |>
-  kableExtra::kbl() |>
-  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) |>
+res %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
@@ -360,27 +380,32 @@ It also adds two or three elements to the report object:
 * A data frame with the values that fall outside of the specified timeframe,
 * A data frame featuring date values that can comply with more than one specified format.
 
-```{r echo=FALSE, eval=TRUE}
+```{r echo=TRUE, eval=TRUE}
 # STANDARDIZE VALUES IN ALL COLUMNS
 res <- standardize_dates(
-  data            = test_data,
-  target_columns  = NULL,
-  format          = NULL,
-  timeframe       = NULL,
+  data = test_data,
+  target_columns = NULL,
+  format = NULL,
+  timeframe = NULL,
   error_tolerance = 0.4,
-  orders          = list(world_named_months = c("Ybd", "dby"),
-                         world_digit_months = c("dmy", "Ymd"),
-                         US_formats         = c("Omdy", "YOmd")),
-  modern_excel    = TRUE
+  orders = list(
+    world_named_months = c("Ybd", "dby"),
+    world_digit_months = c("dmy", "Ymd"),
+    US_formats = c("Omdy", "YOmd")
+  )
 )
 
 # GET THE REPORT
 report <- attr(res, "report")
+```
 
+Below are the possible formats for the date columns based on the specified potential formats from the `orders` argument.
+
+```{r echo=FALSE, eval=TRUE}
 # DISPLAY DATE VALUES THAT COMPLY WITH MULTIPLE FORMATS
-report$multi_format_dates |>
-  kableExtra::kbl() |>
-  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) |>
+report$multi_format_dates %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
@@ -390,9 +415,9 @@ report$multi_format_dates |>
 
 ## Standardizing subject IDs
 
-### Detecting and remove incorrect subject ids
+### Detecting incorrect, duplicated, and missing subject IDs
 
-The `check_subject_ids()` function is designed to identify rows from the input dataset where the ids don't comply with the expected subject ids format. It expects the following parameters:
+The `check_subject_ids()` function is designed to identify rows from the input dataset where the IDs don't comply with the expected subject IDs format. It expects the following parameters:
 
 1. **data**: A data frame or linelist (required).
 2. **target_columns**: The name of the column containing the subject IDs in the dataset (required).
@@ -400,32 +425,30 @@ The `check_subject_ids()` function is designed to identify rows from the input d
 4. **prefix**: A string. If subject IDs have a specific prefix, it is used as a value for this argument. This is optional and can be omitted if there is no prefix.
 5. **suffix**: A string. If subject IDs have a specific suffix, it is used as a value for this argument. It can be ignored otherwise.
 6. **range**: A vector of two elements. If there is an expected range of numbers within the subject IDs, define it using  this parameter. It is optional and can be omitted if there is no specific range.
-7. **remove**: A logical that determines whether to remove the incorrect subject IDs or not. By default, the wrong ids are detected and reported. To replace these, use the `correct_subject_ids()` function described below.
 
-By providing these parameters, the function becomes a versatile tool for data cleaning, ensuring that the user is alerted on the presence of unexpected, missing and duplicated subject ids. When using the function, make sure to tailor the parameters according to the specific requirements of your dataset and the expected characteristics of the subject IDs.
+By providing these parameters, the function becomes a versatile tool for data cleaning, ensuring that the user is alerted on the presence of unexpected, missing and duplicated subject IDs. When using the function, make sure to tailor the parameters according to the specific requirements of your dataset and the expected characteristics of the subject IDs.
 
-```{r eval=TRUE, comment="subject_ids_standardisation"}
+```{r eval=TRUE}
 # DETECT AND REMOVE INCORRECT SUBJECT IDs
 res <- check_subject_ids(
-  data           = readRDS(system.file("extdata", "test_df.RDS",
-                                       package = "cleanepi")),
+  data = readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")),
   target_columns = "study_id",
-  prefix         = "PS",
-  suffix         = "P2",
-  range          = c(1L, 100L),
-  nchar          = 7L
+  prefix = "PS",
+  suffix = "P2",
+  range = c(1L, 100L),
+  nchar = 7L
 )
 
 # EXTRACT REPORT
 report <- attr(res, "report")
 
-# SUMMARIZE THE REPORT OBJECT
-summary(report)
+# DISPLAY THE INCORRECT SUBJECT IDs
+print(report$incorrect_subject_id)
 ```
 
 The `check_subject_ids()` function returns the input dataset and send a warming when there are some incorrect ids.
 
-In addition to detecting undesirable subject ids, the function will also look for missing and duplicated IDs. As the result of this, the report made from this operation might contain two extra elements: **missing_ids** (a vector of row indexes where there is a missing IDs) and **duplicated_ids** (a data frame of rows with the duplicated IDs). Use the `print_report()` function to display the report made from this operation.
+In addition to detecting undesirable subject IDs, the function will also look for missing and duplicated IDs. As the result of this, the report made from this operation might contain two extra elements: **missing_ids** (a vector of row indexes where there is a missing IDs) and **duplicated_ids** (a data frame of rows with the duplicated IDs). Use the `print_report()` function to display the report made from this operation.
 
 
 ### Correct wrong subject ids
@@ -435,21 +458,21 @@ After the detection of the incorrect subject ids using the `check_subject_ids()`
 1. **from**: a column with the incorrect subject ids,
 2. **to**: a column with the values to be used to substitute the incorrect ids.
 
-```{r eval=TRUE, comment="correct ids"}
+```{r eval=TRUE}
 # IMPORT THE INPUT DATA
 data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
 
 # GENERATE THE CORRECTION TABLE
 correction_table <- data.frame(
   from = c("P0005P2", "PB500P2", "PS004P2-1"),
-  to   = c("PB005P2", "PB050P2", "PS004P2"),
+  to = c("PB005P2", "PB050P2", "PS004P2"),
   stringsAsFactors = FALSE
 )
 
 # PERFORM THE CORRECTION
 dat <- correct_subject_ids(
-  data             = data,
-  target_columns   = "study_id",
+  data = data,
+  target_columns = "study_id",
   correction_table = correction_table
 )
 ```
@@ -460,23 +483,28 @@ dat <- correct_subject_ids(
 The `check_date_sequence()` function verifies the order of sequences in date event columns within a dataset. It ensures that the values in the specified date columns follow the desired chronological order. Here are the arguments accepted by the function:
 
 1. **data**: A data frame or linelist (required).
-2. **target_columns**: A vector containing the names of the date columns of interest. These columns should be listed in the expected order of occurrence, reflecting the chronological sequence of events. For example, `target_columns = c("date_of_infection", "date_of_admission", "date_of_death")`.
+2. **target_columns**: A vector containing the names of the date columns of interest. These columns should be listed in the expected order of occurrence that reflects the chronological sequence of events. For example,
+`target_columns = c("date_of_infection", "date_of_admission", "date_of_death")`.
 
 By utilizing these arguments, the `check_date_sequence()` function facilitates the validation of date sequences within a dataset, ensuring data integrity and accuracy for further analysis. Additionally, it offers flexibility by allowing users to choose whether to remove rows with incorrect sequences or store them for further examination in the report object.
 
-```{r eval=TRUE, comment="check_date_order"}
-# DETECT ROWS WITH INCORRECT DATE SEQUENCE
-res <- check_date_sequence(
-  data           = readRDS(system.file("extdata", "test_df.RDS",
-                                       package = "cleanepi")),
+```{r eval=TRUE}
+# IMPORT THE DATA AND STANDARDIZE THE TARGET DATE COLUMNS
+data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
+data <- standardize_dates(
+  data,
   target_columns = c("date_first_pcr_positive_test", "date.of.admission")
 )
 
-# EXTRACT THE REPORT
-report <- attr(res, "report")
+# DETECT ROWS WITH INCORRECT DATE SEQUENCE
+res <- check_date_sequence(
+  data = data,
+  target_columns = c("date_first_pcr_positive_test", "date.of.admission")
+)
 
-# SUMMARIZE THE REPORT OBJECT
-summary(report)
+# DISPLAY THE INCORRECT SEQUENCES OF DATE
+incorrect_sequence <- attr(res, "report")[["incorrect_date_sequence"]]
+print(incorrect_sequence)
 ```
 
 The `check_date_sequence()` function returns the input dataset, augmented with an attributes named as `incorrect_date_sequence` if there are rows with incorrect date sequences.
@@ -484,18 +512,22 @@ This attribute highlights any discrepancies found in the date sequences, enablin
 
 ## Converting character columns into numeric
 
-In certain scenarios, the input data contains columns where the number are written in letters. For instance, the ages of a study participants can be written in letters. Similarly, a column can contain values written in both numbers and letters (an age column where some values are written in numbers and others in letters). The `convert_to_numeric()` function offers the framework to convert all numbers written in letters from a given column into numeric. It takes the following arguments:
+In certain scenarios, the input data contains columns where the numbers are written in letters. For instance, the ages of a study participants can be written in letters. Similarly, a column can contain values written in both numbers and letters (an age column where some values are written in numbers and others in letters). The `convert_to_numeric()` function offers the framework to convert all numbers written in letters from a given column into numeric. It makes call of the main function from the [{numberize}](https://epiverse-trace.github.io/numberize/) package and takes the following arguments:
 
 1. **data**: A data frame or linelist (required).
-2. **target_columns**: A vector containing the names of the columns of interest. When dealing with a linelist, this can be set to `linelist_tags` if the tagged columns are the one to be converted into numeric. When `target_columns = NULL`, the function uses the output form the `scan_data()` function to identify the columns where the proportion of numeric values is at least twice as the percentage of character values. Those columns will be the columns of interest and the character values in them will be converted into numeric. 
+2. **target_columns**: A vector containing the names of the columns of interest. When dealing with a linelist, this can be set to `linelist_tags` if the tagged columns are the one to be converted into numeric. When `target_columns = NULL`, the function uses the output form the `scan_data()` function to identify the columns where the proportion of numeric values is at least twice as the percentage of character values. Those columns will be the columns of interest and the character values in them will be converted into numeric.  
 Note that any string in such column that can not be converted into numeric will be set to `NA` in the resulting data.
-3. **lang**: A character string with language to be used when performing the conversion. Currently one of `"en", "fr", or "es"`.
+3. **lang**: A character string with the language in which the letters are written. Currently one of `"en", "fr", or "es"` for English, French or Spanish respectively.
 
-```{r eval=TRUE, comment="check_date_order"}
+```{r eval=TRUE}
 # CONVERT THE 'age' COLUMN IN THE TEST LINELIST DATA
 dat <- readRDS(system.file("extdata", "messy_data.RDS", package = "cleanepi"))
 head(dat$age, 10L)
-dat <- convert_to_numeric(dat, target_columns = "age", lang = "en")
+dat <- convert_to_numeric(
+  data = dat,
+  target_columns = "age",
+  lang = "en"
+)
 head(dat$age, 10L)
 ```
 
@@ -510,27 +542,27 @@ This function can take the following parameters:
 3. **ref_date**: a reference date
 4. **forward**: a Boolean that indicates whether the counts started after the reference date (`TRUE`) or not (`FALSE`). The default is `TRUE`.
 
-```{reval=TRUE, comment="convert_numeric_to_date"}
-data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")) |>
+```{r eval=TRUE}
+data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")) %>%
   standardize_dates(target_columns = "date.of.admission")
 
 # CREATE THE RECRUITMENT DATE COLUMNS
 data$recruitment_date <- sample(20:50, nrow(data), replace = FALSE)
 
-# RETRIVE THE DATE INDIVIDUALS WERE RECRUITED
-data <- convert_numeric_to_date(
-  data           = data,
+# RETRIVE THE DATE INDIVIDUALS WERE RECRUITED FROM THEIR DATE OF ADMISSION
+dat <- convert_numeric_to_date(
+  data = data,
   target_columns = "recruitment_date",
-  ref_date       = "date.of.admission",
-  forward        = TRUE
+  ref_date = "date.of.admission",
+  forward = TRUE
 )
 
-# RETRIVE THE DATE INDIVIDUALS WERE RECRUITED
-data <- convert_numeric_to_date(
-  data           = data,
+# RETRIVE THE DATE INDIVIDUALS WERE RECRUITED FROM 2019-10-13
+dat <- convert_numeric_to_date(
+  data = data,
   target_columns = "recruitment_date",
-  ref_date       = as.Date("2019-10-13"),
-  forward        = FALSE
+  ref_date = as.Date("2019-10-13"),
+  forward = FALSE
 )
 ```
 
@@ -543,45 +575,51 @@ The function returns the input data where the values in the target columns(s) ar
 The `find_duplicates()` function serves the purpose of identifying duplicated rows within a given dataset. It accepts the following parameters:
 
 1. **data**: The input data frame or linelist.
-2. **target_columns**: A vector containing either column names or column indices from which  duplicated rows will be identified. If `NULL` is passed, duplicates will be detected  across all columns of the dataset. Notably, if the input dataset is a `linelist` object, `target_columns` can be set to `linelist_tags` specifically to identify duplicates across the tagged variables only. 
+2. **target_columns**: A vector containing either column names or column indices from which duplicated rows will be identified. If `NULL` is passed, duplicates will be detected across all columns of the dataset. Notably, if the input dataset is a `linelist` object, `target_columns` can be set to `linelist_tags` specifically to identify duplicates across the tagged variables only. 
 
 By leveraging the `find_duplicates()` function with appropriate parameters, users can efficiently pinpoint duplicated rows within their datasets, either across all columns or selectively across tagged variables in a `linelist` object.
 
-```{r eval=TRUE, comment=""}
+```{r eval=TRUE}
 # IMPORT A `linelist` DATA
-data <- readRDS(system.file("extdata", "test_linelist.RDS",
-                            package = "cleanepi"))
+data <- readRDS(
+  system.file("extdata", "test_linelist.RDS", package = "cleanepi")
+)
 
 # SHOW THE TAGGED VARIABLES
 linelist::tags(data)
 
-# FIND DUPLICATES ACROSS ALL COLUMNS EXCEPT THE SUBJECT IDs COLUMN
-all_columns    <- names(data)
+# FIND DUPLICATES ACROSS ALL COLUMNS EXCEPT THE SUBJECT ids COLUMN
+all_columns <- names(data)
 target_columns <- all_columns[all_columns != "id"]
-dups           <- find_duplicates(data           = data,
-                                  target_columns = target_columns)
+dups <- find_duplicates(
+  data = data,
+  target_columns = target_columns
+)
 
 # FIND DUPLICATES ACROSS TAGGED VARIABLES
 dups <- find_duplicates(
-  data           = data,
+  data = data,
   target_columns = "linelist_tags"
 )
 ```
 
-Upon execution, the `find_duplicates()` function identifies all duplicated rows either based on all columns or those specified, and stores them in the report. In addition to the existing columns, it appends two extra columns to the dataset:
+Upon execution, the `find_duplicates()` function identifies all duplicated rows either based on all columns or those specified, and stores them in the report, where in addition to the existing columns, it appends two extra columns to the dataset:
 
-1. `row_id`: Contains indexes of the duplicated rows from the original input dataset.
+1. `row_id`: Contains indices of the duplicated rows from the original input dataset.
 2. `group_id`: Contains unique identifiers assigned to each duplicated group, which is defined as a set of rows sharing identical values in the designated columns of interest.
 
 By including these extra columns, users gain insights into the specific rows identified as duplicates and their corresponding group identifiers, enabling efficient analysis and management of duplicated data within the dataset.
 
 ```{r eval=TRUE}
-# VISUALIZE THE DUPLICATES
-report     <- attr(dups, "report")
+# DISPLAY THE DUPLICATES
+report <- attr(dups, "report")
 duplicates <- report$duplicated_rows
-duplicates |>
-  kableExtra::kbl() |>
-  kableExtra::kable_paper("striped", font_size = 14, full_width = FALSE) |>
+```
+
+```{r echo=FALSE}
+duplicates %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_paper("striped", font_size = 14, full_width = FALSE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
@@ -593,13 +631,14 @@ duplicates |>
 To eliminate duplicated rows from a dataset, the `remove_duplicates()` function can be employed. This function internally utilizes the `find_duplicates()` function and expects the following parameters:
 
 1. **data**: A data frame or linelist from which duplicated rows will be removed.
-2. **target_columns**: A vector containing either column names or indices specifying the  columns from which duplicated rows will be identified. If set to `NULL`, the function will detect duplicates across all columns. If the input dataset is a `linelist` object, setting this parameter to `linelist_tags` will identify duplicates across the tagged variables only.
+2. **target_columns**: A vector containing either column names or indices specifying the columns from which duplicated rows will be identified. If set to `NULL`, the function will remove duplicates across all columns. If the input dataset is a `linelist` object, setting this parameter to `linelist_tags` will identify and remove duplicates across the tagged variables only.
 
 ```{r eval=TRUE}
 # REMOVE DUPLICATE ACROSS TAGGED COLUMNS ONLY.
 res <- remove_duplicates(
-  data           = readRDS(system.file("extdata", "test_linelist.RDS",
-                                       package = "cleanepi")),
+  data = readRDS(
+    system.file("extdata", "test_linelist.RDS", package = "cleanepi")
+  ),
   target_columns = "linelist_tags"
 )
 ```
@@ -613,7 +652,7 @@ The details about the duplicates removal operation are stored in the report obje
 
 By examining these elements within the report, users gain insights into the specific duplicated rows, those that were removed, and the columns used to identify the duplicates, thus facilitating transparency and documentation of the duplicates removal process.
 
-```{r eval=TRUE, comment=""}
+```{r eval=TRUE}
 # ACCESS THE REPORT
 report <- attr(res, "report")
 
@@ -623,36 +662,16 @@ summary(report)
 
 Use the `print_report()` function to display the report made from this operation.
 
-The output from `find_duplicates()` function can also be passed to `remove_duplicates()` function to specify which duplicated rows to be removed.  
-
-```{r eval=TRUE, comment="find_and_remove_dups"}
-# DETECT DUPLICATES FROM TAGGED COLUMNS
-dups <- find_duplicates(
-  data           = readRDS(system.file("extdata", "test_linelist.RDS",
-                                       package = "cleanepi")),
-  target_columns = "linelist_tags"
-)
-
-# EXTRACT THE DUPLICATES
-report     <- attr(dups, "report")
-duplicates <- report$duplicated_rows
-
-# REMOVE FIRST OCCURRENCE OF DUPLICATED ROWS
-dups_index_to_remove <- duplicates[["row_id"]][seq(1L, nrow(dups), 2L)]
-dups_index_to_remove <- dups_index_to_remove[!is.na(dups_index_to_remove)]
-no_dups <- data[-dups_index_to_remove, ]
-```
-
 ## Dictionary based data substituting
 
 The `clean_using_dictionary()` function offers a convenient way to replace the options in a data frame or linelist with their corresponding values stored in a data dictionary. The function expects the following arguments:
 
 1. **data**: The input data frame or linelist that contains the options to be replaced.
-2. **dictionary**: The data frame with the data dictionary that contains the complete labels for these options. The structure of this data dictionary file should adhere to the standards expected by the [matchmaker](https://www.repidemicsconsortium.org/matchmaker/)  package, as the `clean_using_dictionary()` function relies on functions from this   package.
+2. **dictionary**: The data dictionary in a form of a data frame that contains the complete labels for these options. The structure of this data dictionary file should adhere to the standards expected by the [{matchmaker}](https://www.repidemicsconsortium.org/matchmaker/) package, as the `clean_using_dictionary()` function relies on functions from this package.
 
 ```{r eval=TRUE, echo=FALSE}
-test_dictionary |>
-  kableExtra::kbl() |>
+dictionary %>%
+  kableExtra::kbl() %>%
   kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE)
 ```
 
@@ -665,36 +684,39 @@ In the example below, we add `-99` to our test data dictionary, `test_dictionary
 
 ```{r eval=TRUE}
 # READING IN THE DATA
-data <- readRDS(system.file("extdata", "test_df.RDS",
-                            package = "cleanepi"))
+data <- readRDS(
+  system.file("extdata", "test_df.RDS", package = "cleanepi")
+)
 
 # ADD THE EXTRA OPTION TO THE DICTIONARY
-test_dictionary <- add_to_dictionary(test_dictionary,
-                                      option = "-99",
-                                      value  = "unknow",
-                                      grp    = "sex",
-                                      order  = NULL)
-```
-
-```{r eval=TRUE, echo=FALSE}
-test_dictionary |>
-  kableExtra::kbl() |>
-  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE)
-```
-
-
-```{r eval=TRUE, comment=""}
-# PERFORM THE DICTIONARY-BASED SUBSTITUTION
-cleaned_df <- clean_using_dictionary(
-  data       = data,
-  dictionary = test_dictionary
+dictionary <- add_to_dictionary(
+  dictionary = dictionary,
+  option = "-99",
+  value = "unknow",
+  grp = "sex",
+  order = NULL
 )
 ```
 
 ```{r eval=TRUE, echo=FALSE}
-cleaned_df |>
-  kableExtra::kbl() |>
-  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) |>
+dictionary %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE)
+```
+
+
+```{r eval=TRUE}
+# PERFORM THE DICTIONARY-BASED SUBSTITUTION
+cleaned_df <- clean_using_dictionary(
+  data = data,
+  dictionary = dictionary
+)
+```
+
+```{r eval=TRUE, echo=FALSE}
+cleaned_df %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
@@ -706,47 +728,56 @@ cleaned_df |>
 The `timespan()` function computes the time span between two elements of type Date. The resulting time span can be expressed in “years”, “months”, “weeks”, or “days”, depending on the user-specified unit. The functions can take the following arguments:
 
 1. **data**: The input dataset (required).
-2. **target_column**: A string with the name of the target column (require). The values in this column are expected to be in the form of `Ymd` i.e. `2024-01-31`. The time span will calculated between these values and the `end_date` defined below.
-3. **end_date**: it can be either a character that is the name of another column of type Date from the input data or a vector of Date values or a single Date value (required). This should also be in the ISO8601 format ("2024-01-31") and its default value is today's date `Sys.Date()`.
+2. **target_column**: A string with the name of the target column (require). The values in this column are expected to be in the form of `Ymd` i.e. `2024-01-31`. The time span will be calculated between these values and the `end_date` defined below.
+3. **end_date**: It can be either a character that is the name of another column of type Date from the input data or a vector of Date values or a single Date value (required). This should also be in the ISO8601 format ("2024-01-31") and its default value is today's date `Sys.Date()`.
 4. **span_unit**: This parameter determines the unit in which the time span is expressed (required). It can be calculated in “years”, “months”, “weeks”, or “days”. By default, the time span is calculated in “years” if this parameter is not provided.
 5. **span_column_name**: A string for the name of the column added to the input data. The default is `span`.
-6. **span_remainder_unit**: A parameter used to determine the unit in which the remainder of the time span calculation will be returned. The possible units are: “days” or “weeks” or “months”. By default, the function returns decimal age i.e. `span_remainder_unit = NULL`.
+6. **span_remainder_unit**: A parameter used to determine the unit in which the remainder of the time span calculation will be returned. The possible units are: “days” or “weeks” or “months”. By default, the function returns decimal values i.e. `span_remainder_unit = NULL`.
 
 With these arguments, the function offers flexibility in determining the time span in different units. It facilitates various analytics tasks where the time span computation is a necessary component, providing users with the ability to customize the output according to their specific requirements.
 
 ```{r eval=TRUE}
 # IMPORT DATA, REPLACE MISSING VALUES WITH 'NA' & STANDARDIZE DATES
-data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")) |>
-  replace_missing_values(target_columns = "dateOfBirth",
-                         na_strings     = "-99") |>
-  standardize_dates(target_columns  = "dateOfBirth",
-                    error_tolerance = 0.0)
+data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")) %>%
+  replace_missing_values(
+    target_columns = "dateOfBirth",
+    na_strings = "-99"
+  ) %>%
+  standardize_dates(
+    target_columns = "dateOfBirth",
+    error_tolerance = 0.0,
+    format = "%m/%d/%Y" # nolint: nonportable_path_linter.
+  )
 
 # CALCULATE INDIVIDUAL AGE IN YEARS FROM THE 'dateOfBirth' COLUMN AND SEND THE
 # REMAINDER IN MONTHS
 age <- timespan(
-  data                = data,
-  target_column       = "dateOfBirth",
-  end_date            = Sys.Date(),
-  span_unit           = "years",
-  span_column_name    = "age_in_years",
+  data = data,
+  target_column = "dateOfBirth",
+  end_date = Sys.Date(),
+  span_unit = "years",
+  span_column_name = "age_in_years",
   span_remainder_unit = "months"
 )
 
-# CALCULATE THE TIME SPAN IN YEARS BETWEEN INDIVIDUALS 'dateOfBirth' AND THE DAY
-# THEY TESTED POSITIVE
-data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")) |>
-  replace_missing_values(target_columns = "dateOfBirth",
-                         na_strings     = "-99") |>
+# CALCULATE THE TIME SPAN IN DAYS BETWEEN INDIVIDUALS DATE OF ADMISSION AND THE
+# DAY THEY TESTED POSITIVE
+data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
+dat <- data %>%
+  replace_missing_values(
+    target_columns = "dateOfBirth",
+    na_strings = "-99"
+  ) %>%
   standardize_dates(
-    target_columns  = c("dateOfBirth", "date_first_pcr_positive_test"),
-    error_tolerance = 0.0
-  ) |>
+    target_columns = c("date_first_pcr_positive_test", "date.of.admission"),
+    error_tolerance = 0.0,
+    format = NULL
+  ) %>%
   timespan(
-    target_column       = "dateOfBirth",
-    end_date            = "date_first_pcr_positive_test",
-    span_unit           = "years",
-    span_column_name    = "elapsed_time",
+    target_column = "date_first_pcr_positive_test",
+    end_date = "date.of.admission",
+    span_unit = "days",
+    span_column_name = "elapsed_days",
     span_remainder_unit = NULL
   )
 ```
@@ -755,28 +786,72 @@ The `timespan()` function augments the input dataset by adding one or two extra 
 
 1. **Calculated time span in the specified scale**: Contains the calculated time span in the specified unit (“years”, “months”, “weeks”, or “days”).
 
-2. **Remaining number of days**: Indicates the remaining number of “days” or “weeks” or “months” after calculating the time span, representing the fractional part of the time span calculation. This column is included if needed, and provides additional granularity in the time span representation.
+2. **Remainder from the time span calculation**: Indicates the remaining number of “days” or “weeks” or “months” after calculating the time span, representing the fractional part of the time span calculation. This column is included if needed, and provides additional granularity in the time span representation.
 
 ```{r eval=TRUE, echo=FALSE}
 # DISPLAY THE OUTPUT OBJECT
-data |>
-  kableExtra::kbl() |>
-  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) |>
+dat %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
                          fixed_thead = TRUE)
 ```
 
+## Using {cleanepi} functionalities with pipe operators
+
+```{r echo=TRUE, eval=TRUE}
+# IMPORT THE INPUT DATASET
+data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
+
+# IMPORT THE DATA DICTIONARY
+test_dictionary <- readRDS(
+  system.file("extdata", "test_dictionary.RDS", package = "cleanepi")
+)
+
+# SCAN THROUGH THE DATA
+scan_res <- scan_data(data)
+
+# PERFORM DATA CLEANING
+cleaned_data <- data %>%
+  standardize_column_names(keep = NULL, rename = c(DOB = "dateOfBirth")) %>%
+  replace_missing_values(target_columns = NULL, na_strings = "-99") %>%
+  remove_constants(cutoff = 1.0) %>%
+  remove_duplicates(target_columns = NULL) %>%
+  standardize_dates(
+    target_columns = NULL,
+    error_tolerance = 0.4,
+    format = NULL,
+    timeframe = as.Date(c("1973-05-29", "2023-05-29"))
+  ) %>%
+  check_subject_ids(
+    target_columns = "study_id",
+    prefix = "PS",
+    suffix = "P2",
+    range = c(1L, 100L),
+    nchar = 7L
+  ) %>%
+  convert_to_numeric(target_columns = "sex", lang = "en") %>%
+  clean_using_dictionary(dictionary = test_dictionary)
+
+# ADD THE DATA SCANNING RESULT TO THE REPORT
+cleaned_data <- add_to_report(
+   x = cleaned_data,
+   key = "scanning_result",
+   value = scan_res
+)
+```
+
 ## Printing the report
 
 ```{r echo=TRUE, eval=FALSE}
 print_report(
-  data             = data,
-  report_title     = "{cleanepi} data cleaning report",
+  data = cleaned_data,
+  report_title = "{cleanepi} data cleaning report",
   output_directory = ".",
-  output_filename  = "cleaning_report",
-  format           = "html",
-  print            = TRUE
+  output_file_name = NULL,
+  format = "html",
+  print = TRUE
 )
 ```
