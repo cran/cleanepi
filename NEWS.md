@@ -1,6 +1,48 @@
-# cleanepi 1.1.0
+# cleanepi 1.1.1
 
-# cleanepi 1.0.2.9000
+## Bug fixes
+
+* Added {systemfonts} as a dependency in Suggests as it is required to build the
+vignette in **r-oldrel-macos-arm64** (#218, @Karim-Mane).
+
+* Set a default value for the `orders` argument of the `standardize_dates()`
+function using its initial value in version 1.0.2 (#224, @Karim-Mane).
+
+## Enhancements
+
+* The values of the `duplicates_checked_from`, `converted_into_numeric`,
+`missing_values_replaced_at`, `missing_ids` elements of the report which used to
+be a character (a comma-separated list of values) are now of type vector
+(#228, @Karim-Mane).
+
+* Remove the `row_id` column returned by the `remove_duplicates()` function.
+This columns was introduced to perform the anti join with the output from the
+`find_duplicates()` function, but is not needed in the final output object
+(#227, @Karim-Mane).
+
+* Added an argument (`what`) to `print_report()` allow printing the report from
+a specific data cleaning operation and stop users from interacting with
+attributes (#220, @Karim-Mane).
+
+* Clarify messages to distinguish between missing values and incorrect IDs in
+`check_subject_ids()` function (#222, @Karim-Mane).
+
+* Prevent `add_to_report()` from adding `NULL` to the data cleaning report
+(#232, @Karim-Mane).
+
+* Set the development mode in the _pkgdown.yml file to `auto` to  render
+the website for only new releases,  while also providing a development version
+for users installing the package from GitHub
+(#240, @Karim-Mane).
+
+* Add a message to notify users that the `{reactable}` package needs to be
+installed for the `print_report()` function to work as expected
+(#241, @Karim-Mane).
+
+* Add the `correct_mispelled_values()` function to fix spelling mistakes based
+on fuzzy matching (#208, @joshwlambert).
+
+# cleanepi 1.1.0
 
 ## Bug fixes
 

@@ -11,13 +11,13 @@ remove_constants(data, cutoff = 1)
 \item{data}{The input \code{<data.frame>} or \code{<linelist>}}
 
 \item{cutoff}{A \code{<numeric>} value specifying the cut-off for removing
-empty rows and columns. If provided, only rows and columns with a
-percentage of missing data greater than this cut-off will be removed.
-The default is 1.}
+constant data. The possible values vary between 0 (excluded) and 1
+(included). The default is 1 i.e. remove rows and columns with 100\%
+constant data.}
 }
 \value{
-The input dataset with empty rows, empty columns, and constant
-columns removed.
+The input dataset where the constant data is filtered out based on
+specified cut-off.
 }
 \description{
 The function iteratively removes constant data until none remain.
@@ -38,33 +38,32 @@ data$dateOfBirth[4] = NA_character_
 data$dateOfBirth[5] = NA_character_
 
 # with cutoff = 1, line 3, 4, and 5 are not removed
-test <- remove_constants(
+cleaned_df <- remove_constants(
   data = data,
   cutoff = 1
 )
 
 # drop rows or columns with a percentage of constant values
 # equal to or more than 50\%
-test <- remove_constants(
-  data = test,
+cleaned_df <- remove_constants(
+  data = cleaned_df,
   cutoff = 0.5
 )
 
 # drop rows or columns with a percentage of constant values
 # equal to or more than 25\%
-test <- remove_constants(
-  data = test,
+cleaned_df <- remove_constants(
+  data = cleaned_df,
   cutoff = 0.25
 )
 
 # drop rows or columns with a percentage of constant values
 # equal to or more than 15\%
-test <- remove_constants(
-  data = test,
+cleaned_df <- remove_constants(
+  data = cleaned_df,
   cutoff = 0.15
 )
 
 # check the report to see what has happened
-report <- attr(test, "report")
-report$constant_data
+print_report(cleaned_df, "constant_data")
 }

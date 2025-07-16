@@ -7,12 +7,12 @@
 #'
 #' @param data The input \code{<data.frame>} or \code{<linelist>}
 #' @param cutoff A \code{<numeric>} value specifying the cut-off for removing
-#'    empty rows and columns. If provided, only rows and columns with a
-#'    percentage of missing data greater than this cut-off will be removed.
-#'    The default is 1.
+#'    constant data. The possible values vary between 0 (excluded) and 1
+#'    (included). The default is 1 i.e. remove rows and columns with 100%
+#'    constant data.
 #'
-#' @returns The input dataset with empty rows, empty columns, and constant
-#'    columns removed.
+#' @returns The input dataset where the constant data is filtered out based on
+#'    specified cut-off.
 #' @export
 #'
 #' @examples
@@ -30,38 +30,45 @@
 #' data$dateOfBirth[5] = NA_character_
 #'
 #' # with cutoff = 1, line 3, 4, and 5 are not removed
-#' test <- remove_constants(
+#' cleaned_df <- remove_constants(
 #'   data = data,
 #'   cutoff = 1
 #' )
 #'
 #' # drop rows or columns with a percentage of constant values
 #' # equal to or more than 50%
-#' test <- remove_constants(
-#'   data = test,
+#' cleaned_df <- remove_constants(
+#'   data = cleaned_df,
 #'   cutoff = 0.5
 #' )
 #'
 #' # drop rows or columns with a percentage of constant values
 #' # equal to or more than 25%
-#' test <- remove_constants(
-#'   data = test,
+#' cleaned_df <- remove_constants(
+#'   data = cleaned_df,
 #'   cutoff = 0.25
 #' )
 #'
 #' # drop rows or columns with a percentage of constant values
 #' # equal to or more than 15%
-#' test <- remove_constants(
-#'   data = test,
+#' cleaned_df <- remove_constants(
+#'   data = cleaned_df,
 #'   cutoff = 0.15
 #' )
 #'
 #' # check the report to see what has happened
-#' report <- attr(test, "report")
-#' report$constant_data
+#' print_report(cleaned_df, "constant_data")
 remove_constants <- function(data, cutoff = 1.0) {
   checkmate::assert_number(cutoff, lower = 0.0, upper = 1.0, na.ok = FALSE,
                            finite = TRUE, null.ok = FALSE)
+  # send a message about iterative constant data removal to alert the user
+  if (cutoff == 0) {
+    cli::cli_inform(c(
+      i = tr_("Constant data was not removed. The value for the {.emph cut-off} argument must be greater than {.emph 0} and less than or equal to {.emph 1}.") # nolint: line_length_linter
+    ))
+    return(data)
+  }
+
   # extract the current report and save it for later use
   report <- attr(data, "report")
 
@@ -122,7 +129,7 @@ remove_constants <- function(data, cutoff = 1.0) {
   if (nrow(constant_data_report) > 1) {
     cli::cli_inform(c(
       "!" = tr_("Constant data was removed after {.val {nrow(constant_data_report)}} iteration{?s}."), # nolint: line_length_linter
-      i = tr_("Enter {.code attr(dat, \"report\")[[\"constant_data\"]]} for more information, where {.val dat} represents the object used to store the output from {.fn remove_constants}.") # nolint: line_length_linter
+      i = tr_("Enter {.code print_report(dat, \"constant_data\")} for more information, where {.val dat} represents the object used to store the output from {.fn remove_constants}.") # nolint: line_length_linter
     ))
   }
 
@@ -147,18 +154,18 @@ perform_remove_constants <- function(data, cutoff) {
   # remove the empty rows
   missingness <- rowSums(is.na(data)) / ncol(data)
   to_remove <- missingness >= cutoff
-  dat <- data[!to_remove, ]
+  dat <- if (all(to_remove)) data else data[!to_remove, ]
 
   # report empty rows if found
   empty_rows <- NULL
-  if (nrow(data) > nrow(dat)) {
-    empty_rows <- toString(which(rowSums(is.na(data)) / ncol(data) >= cutoff))
+  if (any(to_remove)) {
+    empty_rows <- toString(which(to_remove))
   }
 
   # remove the empty columns
   missingness <- colSums(is.na(dat)) / nrow(dat)
   to_remove <- missingness >= cutoff
-  dat <- dat[, !to_remove]
+  dat <- if (sum(to_remove) == 0) dat else dat[, !to_remove]
 
   # report empty columns if found
   empty_columns <- NULL

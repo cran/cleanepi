@@ -5,7 +5,12 @@
 #' found, it reports back the proportion of the data types mentioned above in
 #' those columns. See the details section to know more about how it works.
 #'
-#' @param data A \code{<data.frame>} or \code{<linelist>}
+#' @param data The input \code{<data.frame>} or \code{<linelist>}
+#' @param format A \code{<character>} with the format in which the output of the
+#'    data scanning result will be returned. The function returns the
+#'    `proportions` of the different data types by default. Other possible
+#'    values are: `percentage` and `fraction` to return the percentage or the
+#'    fraction of the data types respectively.
 #'
 #' @returns A \code{<data.frame>} if the input data contains columns of type
 #'    character. It invisibly returns \code{NA} otherwise. The returned data
@@ -37,7 +42,7 @@
 #' @export
 #'
 #' @examples
-#' # scan through a data frame of characters
+#' # scan through a data frame of character columns only
 #' scan_result <- scan_data(
 #'   data = readRDS(
 #'     system.file("extdata", "messy_data.RDS", package = "cleanepi")
@@ -61,7 +66,14 @@
 #' iris[["posit_ct"]] <- as.POSIXct(iris[["date"]])
 #' scan_result <- scan_data(data = iris)
 #'
-scan_data <- function(data) {
+scan_data <- function(data, format = "proportion") {
+  checkmate::assert_data_frame(data, min.rows = 1, min.cols = 1,
+                               null.ok = FALSE)
+  checkmate::assert_choice(
+    format,
+    choices = c("proportion", "fraction", "percentage"),
+    null.ok = FALSE
+  )
   # scan through all columns of the data and the identify character columns
   types <- vapply(data, typeof, character(1L))
   target_columns <- which(types == "character")
@@ -77,9 +89,20 @@ scan_data <- function(data) {
   # unclass the data to prevent from warnings when dealing with linelist, and
   # scan through the character columns
   data <- as.data.frame(data)[, target_columns, drop = FALSE]
-  scan_result <- vapply(seq_len(ncol(data)), function(col_index) {
-    scan_in_character(data[[col_index]], names(data)[[col_index]])
-  }, numeric(6L))
+  if (format == "proportion") {
+    scan_result <- vapply(seq_len(ncol(data)), function(col_index) {
+      return(
+        scan_in_character(data[[col_index]], names(data)[[col_index]], format)
+      )
+    }, numeric(6L))
+  } else {
+    scan_result <- vapply(seq_len(ncol(data)), function(col_index) {
+      return(
+        scan_in_character(data[[col_index]], names(data)[[col_index]], format)
+      )
+    }, character(6L))
+  }
+
   scan_result <- as.data.frame(t(scan_result))
   names(scan_result) <- c("missing", "numeric", "date", "character", "logical",
                           "ambiguous")
@@ -97,6 +120,7 @@ scan_data <- function(data) {
   }
   rownames(scan_result) <- NULL
   scan_result[["ambiguous"]] <- NULL
+
   return(scan_result)
 }
 
@@ -104,12 +128,13 @@ scan_data <- function(data) {
 #'
 #' @param x The input \code{<vector>} of characters
 #' @param x_name The name of the corresponding column
+#' @param format A \code{<character>} with the user-specified format
 #'
 #' @return A \code{<vector>} of \code{<numeric>} with the proportion of the
 #'    different types of data that were detected within the input vector.
 #' @keywords internal
 #'
-scan_in_character <- function(x, x_name) {
+scan_in_character <- function(x, x_name, format) {
   # There might be, in addition to missing values, within a character column,
   # values of type: character, numeric, date (date or date-time), and logical
   # In this function, we check the presence of these different types within a
@@ -118,12 +143,12 @@ scan_in_character <- function(x, x_name) {
   # save the variable length
   # the character count is decreased by the number of occurrence a different
   # data type is found.
-  initial_length <- character_count <- length(x)
+  initial_length <- character_count <- length(x) # nolint: object_usage_linter
 
   # get the count of missing data (NA)
   na_count <- sum(is.na(x))
   x <- x[!is.na(x)]
-  character_count <- character_count - na_count
+  character_count <- valid_count <- character_count - na_count
 
   # convert to numeric to determine the numeric count
   # store the index of numeric values for comparison with index of date values
@@ -182,15 +207,33 @@ scan_in_character <- function(x, x_name) {
   character_count <- character_count - logical_count
 
   # transform into proportions
-  props <- round(
-    c(na_count, numeric_count, date_count, character_count, logical_count) /
-      initial_length, 4L
-  )
+  counts <- c(na_count, numeric_count, date_count, character_count,
+              logical_count)
+  result <- get_appropriate_format(counts, valid_count, format)
 
   # add 100 to the `props` vector if there were ambiguous values on that column,
   # -1 otherwise
   ambiguous_signal <- ifelse(ambiguous_count > 0, 100, -1)
-  props <- c(props, ambiguous_signal)
+  result <- c(result, ambiguous_signal)
 
-  return(props)
+  return(result)
+}
+
+#' Transform scanning result format into user-chosen format
+#'
+#' @param counts A numeric vector with the counts of the different data types
+#' @param valid_count A numeric with the number of non-missing values in the
+#'    the target column.
+#' @param format A character with the user-specified format
+#'
+#' @keywords internal
+get_appropriate_format <- function(counts, valid_count, format) {
+  result <- switch(format,
+    "proportion" = round(counts / valid_count, 4L), # nolint: keyword_quote_linter
+    "percentage" = paste( # nolint: keyword_quote_linter
+      round(counts / valid_count * 100, 4L), "%", sep = ""
+    ),
+    "fraction" = paste(as.character(counts), valid_count, sep = "/") # nolint: keyword_quote_linter
+  )
+  return(result)
 }

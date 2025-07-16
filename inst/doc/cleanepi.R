@@ -91,15 +91,57 @@ cleaned_data <- clean_data(
   dictionary = dictionary
 )
 
-## ----eval=TRUE----------------------------------------------------------------
-# ACCESS THE DATA CLEANING REPORT
-report <- attr(cleaned_data, "report")
+## ----echo=TRUE, eval=TRUE-----------------------------------------------------
+# IMPORT THE INPUT DATASET
+data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
 
-# SUMMARIZE THE REPORT OBJECT
-summary(report)
+# IMPORT THE DATA DICTIONARY
+test_dictionary <- readRDS(
+  system.file("extdata", "test_dictionary.RDS", package = "cleanepi")
+)
 
-## ----eval=FALSE---------------------------------------------------------------
-# print_report(cleaned_data)
+# SCAN THROUGH THE DATA
+scan_res <- scan_data(data)
+
+# PERFORM DATA CLEANING
+cleaned_data <- data %>%
+  standardize_column_names(keep = NULL, rename = c(DOB = "dateOfBirth")) %>%
+  replace_missing_values(target_columns = NULL, na_strings = "-99") %>%
+  remove_constants(cutoff = 1.0) %>%
+  remove_duplicates(target_columns = NULL) %>%
+  standardize_dates(
+    target_columns = NULL,
+    error_tolerance = 0.4,
+    format = NULL,
+    timeframe = as.Date(c("1973-05-29", "2023-05-29"))
+  ) %>%
+  check_subject_ids(
+    target_columns = "study_id",
+    prefix = "PS",
+    suffix = "P2",
+    range = c(1L, 100L),
+    nchar = 7L
+  ) %>%
+  convert_to_numeric(target_columns = "sex", lang = "en") %>%
+  clean_using_dictionary(dictionary = test_dictionary)
+
+# ADD THE DATA SCANNING RESULT TO THE REPORT
+cleaned_data <- add_to_report(
+   x = cleaned_data,
+   key = "scanning_result",
+   value = scan_res
+)
+
+## ----echo=TRUE, eval=FALSE----------------------------------------------------
+# # PRINT THE ENTIRE DATA CLEANING REPORT
+# print_report(
+#   data = cleaned_data,
+#   what = NULL,
+#   print = TRUE,
+#   report_title = "{cleanepi} data cleaning report",
+#   output_file_name = NULL,
+#   format = "html"
+# )
 
 ## ----echo=TRUE, eval=TRUE-----------------------------------------------------
 # IMPORT THE INPUT DATA
@@ -123,6 +165,9 @@ dat %>%
                          extra_css = NULL,
                          fixed_thead = TRUE)
 
+## ----echo=TRUE, eval=TRUE-----------------------------------------------------
+print_report(dat, "constant_data")
+
 ## ----eval=TRUE----------------------------------------------------------------
 # IMPORT AND PRINT THE INITAL COLUMN NAMES
 data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
@@ -142,26 +187,33 @@ cleaned_data <- standardize_column_names(
   keep = "date.of.admission",
   rename = c(DOB = "dateOfBirth", gender = "sex")
 )
-print(colnames(cleaned_data))
+
+# PRINT THE REPORT FOR THIS OPERATION
+print_report(cleaned_data, "colnames")
 
 ## ----eval=TRUE----------------------------------------------------------------
 # VISUALIZE THE PREDEFINED VECTOR OF MISSING CHARACTERS
 print(cleanepi::common_na_strings)
 
 ## ----eval=TRUE----------------------------------------------------------------
+data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
+
 # REPLACE ALL OCCURENCES OF "-99" WITH NA IN THE "sex" COLUMN
 cleaned_data <- replace_missing_values(
-  data = readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")),
+  data = data,
   target_columns = "sex",
   na_strings = "-99"
 )
 
 # REPLACE ALL OCCURENCES OF "-99" WITH NA FROM ALL COLUMNS
 cleaned_data <- replace_missing_values(
-  data = readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")),
+  data = data,
   target_columns = NULL,
   na_strings = "-99"
 )
+
+# PRINT THE REPORT FROM THIS OPERATION
+print_report(cleaned_data, "missing_values_replaced_at")
 
 ## ----echo=FALSE, eval=TRUE----------------------------------------------------
 cleaned_data %>%
@@ -192,18 +244,15 @@ cleaned_data %>%
 # orders$ymdhms <- c("Ymdhms", "Ymdhm")
 
 ## ----eval=TRUE----------------------------------------------------------------
-# STANDARDIZE VALUES IN THE 'date_first_pcr_positive_test' COLUMN
-test_data <- readRDS(
-  system.file("extdata", "test_df.RDS", package = "cleanepi")
-)
+# STANDARDIZE VALUES IN THE 'date.of.admission' COLUMN
+data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
+head(data$date_first_pcr_positive_test)
 
-head(test_data$date_first_pcr_positive_test)
-
-res <- standardize_dates(
+cleaned_data <- standardize_dates(
   data = test_data,
-  target_columns = "date_first_pcr_positive_test",
+  target_columns = "date.of.admission",
   format = NULL,
-  timeframe = NULL,
+  timeframe = as.Date(c("2021-01-01", "2021-12-01")),
   error_tolerance = 0.4,
   orders = list(
     world_named_months = c("Ybd", "dby"),
@@ -212,19 +261,13 @@ res <- standardize_dates(
   )
 )
 
-## ----echo=FALSE, eval=TRUE----------------------------------------------------
-res %>%
-  kableExtra::kbl() %>%
-  kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
-  kableExtra::scroll_box(height = "200px", width = "100%",
-                         box_css = "border: 1px solid #ddd; padding: 5px; ",
-                         extra_css = NULL,
-                         fixed_thead = TRUE)
+# PRINT THE REPORT FROM THIS OPERATION
+print_report(cleaned_data, "date_standardization")
 
 ## ----echo=TRUE, eval=TRUE-----------------------------------------------------
 # STANDARDIZE VALUES IN ALL COLUMNS
-res <- standardize_dates(
-  data = test_data,
+cleaned_data <- standardize_dates(
+  data = data,
   target_columns = NULL,
   format = NULL,
   timeframe = NULL,
@@ -236,12 +279,11 @@ res <- standardize_dates(
   )
 )
 
-# GET THE REPORT
-report <- attr(res, "report")
+# PRINT THE REPORT
+print_report(cleaned_data, "date_standardization")
 
 ## ----echo=FALSE, eval=TRUE----------------------------------------------------
-# DISPLAY DATE VALUES THAT COMPLY WITH MULTIPLE FORMATS
-report$multi_format_dates %>%
+cleaned_data %>%
   kableExtra::kbl() %>%
   kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
@@ -250,9 +292,17 @@ report$multi_format_dates %>%
                          fixed_thead = TRUE)
 
 ## ----eval=TRUE----------------------------------------------------------------
-# DETECT AND REMOVE INCORRECT SUBJECT IDs
-res <- check_subject_ids(
-  data = readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")),
+data <-  readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
+
+# MAKE FIRST AND LAST SUBJECT IDS THE SAME
+data$study_id[10] <- data$study_id[1]
+
+# SET SUBJECT ID NUMBER 9 TO NA
+data$study_id[9] <- NA
+
+# DETECT INCORRECT SUBJECT IDs
+cleaned_data <- check_subject_ids(
+  data = data,
   target_columns = "study_id",
   prefix = "PS",
   suffix = "P2",
@@ -260,11 +310,8 @@ res <- check_subject_ids(
   nchar = 7L
 )
 
-# EXTRACT REPORT
-report <- attr(res, "report")
-
-# DISPLAY THE INCORRECT SUBJECT IDs
-print(report$incorrect_subject_id)
+# PRINT THE REPORT FROM THIS OPERATION
+print_report(cleaned_data, "incorrect_subject_id")
 
 ## ----eval=TRUE----------------------------------------------------------------
 # IMPORT THE INPUT DATA
@@ -286,32 +333,34 @@ dat <- correct_subject_ids(
 
 ## ----eval=TRUE----------------------------------------------------------------
 # IMPORT THE DATA AND STANDARDIZE THE TARGET DATE COLUMNS
-data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
-data <- standardize_dates(
-  data,
-  target_columns = c("date_first_pcr_positive_test", "date.of.admission")
-)
+data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")) %>%
+  standardize_dates(
+    target_columns = c("date_first_pcr_positive_test", "date.of.admission")
+  )
 
 # DETECT ROWS WITH INCORRECT DATE SEQUENCE
-res <- check_date_sequence(
+cleaned_data <- check_date_sequence(
   data = data,
   target_columns = c("date_first_pcr_positive_test", "date.of.admission")
 )
 
-# DISPLAY THE INCORRECT SEQUENCES OF DATE
-incorrect_sequence <- attr(res, "report")[["incorrect_date_sequence"]]
-print(incorrect_sequence)
+# PRINT THE REPORT FROM THIS OPERATION
+print_report(cleaned_data, "incorrect_date_sequence")
 
 ## ----eval=TRUE----------------------------------------------------------------
 # CONVERT THE 'age' COLUMN IN THE TEST LINELIST DATA
 dat <- readRDS(system.file("extdata", "messy_data.RDS", package = "cleanepi"))
 head(dat$age, 10L)
-dat <- convert_to_numeric(
+
+cleaned_data <- convert_to_numeric(
   data = dat,
   target_columns = "age",
   lang = "en"
 )
-head(dat$age, 10L)
+head(cleaned_data$age, 10L)
+
+# PRINT THE REPORT FROM THIS OPERATION
+print_report(cleaned_data, "converted_into_numeric")
 
 ## ----eval=TRUE----------------------------------------------------------------
 data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")) %>%
@@ -360,34 +409,24 @@ dups <- find_duplicates(
 )
 
 ## ----eval=TRUE----------------------------------------------------------------
-# DISPLAY THE DUPLICATES
-report <- attr(dups, "report")
-duplicates <- report$duplicated_rows
-
-## ----echo=FALSE---------------------------------------------------------------
-# duplicates %>%
-#   kableExtra::kbl() %>%
-#   kableExtra::kable_paper("striped", font_size = 14, full_width = FALSE) %>%
-#   kableExtra::scroll_box(height = "200px", width = "100%",
-#                          box_css = "border: 1px solid #ddd; padding: 5px; ",
-#                          extra_css = NULL,
-#                          fixed_thead = TRUE)
+# PRINT THE REPORT FROM DUPLICATES FINDING
+print_report(dups, "found_duplicates")
 
 ## ----eval=TRUE----------------------------------------------------------------
 # REMOVE DUPLICATE ACROSS TAGGED COLUMNS ONLY.
-res <- remove_duplicates(
+data <- readRDS(
+  system.file("extdata", "test_linelist.RDS", package = "cleanepi")
+)
+
+cleaned_data <- remove_duplicates(
   data = readRDS(
     system.file("extdata", "test_linelist.RDS", package = "cleanepi")
   ),
   target_columns = "linelist_tags"
 )
 
-## ----eval=TRUE----------------------------------------------------------------
-# ACCESS THE REPORT
-report <- attr(res, "report")
-
-# SUMMARIZE THE REPORT OBJECT
-summary(report)
+# PRINT THE REPORT FROM THIS OPERATION
+print_report(cleaned_data, "removed_duplicates")
 
 ## ----eval=TRUE, echo=FALSE----------------------------------------------------
 dictionary %>%
@@ -396,10 +435,18 @@ dictionary %>%
 
 ## ----eval=TRUE----------------------------------------------------------------
 # READING IN THE DATA
-data <- readRDS(
-  system.file("extdata", "test_df.RDS", package = "cleanepi")
+data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
+
+# PERFORM THE DICTIONARY-BASED SUBSTITUTION
+cleaned_data <- clean_using_dictionary(
+  data = data,
+  dictionary = dictionary
 )
 
+# PRINT THE REPORT FROM THIS OPERATION
+print_report(cleaned_data, "misspelled_values")
+
+## ----eval=TRUE----------------------------------------------------------------
 # ADD THE EXTRA OPTION TO THE DICTIONARY
 dictionary <- add_to_dictionary(
   dictionary = dictionary,
@@ -416,19 +463,34 @@ dictionary %>%
 
 ## ----eval=TRUE----------------------------------------------------------------
 # PERFORM THE DICTIONARY-BASED SUBSTITUTION
-cleaned_df <- clean_using_dictionary(
+cleaned_data <- clean_using_dictionary(
   data = data,
   dictionary = dictionary
 )
 
 ## ----eval=TRUE, echo=FALSE----------------------------------------------------
-cleaned_df %>%
+cleaned_data %>%
   kableExtra::kbl() %>%
   kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
                          fixed_thead = TRUE)
+
+## -----------------------------------------------------------------------------
+# df <- data.frame(
+#   case_type = c("confirmed", "confermed", "probable", "susspected"),
+#   outcome = c("died", "recoverd", "did", "recovered"),
+#   stringsAsFactors = FALSE
+# )
+# df
+# 
+# correct_misspelled_values(
+#   data = df,
+#   target_columns = c("case_type", "outcome"),
+#   wordlist = c("confirmed", "probable", "suspected", "died", "recovered"),
+#   confirm = FALSE
+# )
 
 ## ----eval=TRUE----------------------------------------------------------------
 # IMPORT DATA, REPLACE MISSING VALUES WITH 'NA' & STANDARDIZE DATES
@@ -445,7 +507,7 @@ data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi")) %>%
 
 # CALCULATE INDIVIDUAL AGE IN YEARS FROM THE 'dateOfBirth' COLUMN AND SEND THE
 # REMAINDER IN MONTHS
-age <- timespan(
+cleaned_data <- timespan(
   data = data,
   target_column = "dateOfBirth",
   end_date = Sys.Date(),
@@ -457,7 +519,7 @@ age <- timespan(
 # CALCULATE THE TIME SPAN IN DAYS BETWEEN INDIVIDUALS DATE OF ADMISSION AND THE
 # DAY THEY TESTED POSITIVE
 data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
-dat <- data %>%
+cleaned_data <- data %>%
   replace_missing_values(
     target_columns = "dateOfBirth",
     na_strings = "-99"
@@ -477,62 +539,11 @@ dat <- data %>%
 
 ## ----eval=TRUE, echo=FALSE----------------------------------------------------
 # DISPLAY THE OUTPUT OBJECT
-dat %>%
+cleaned_data %>%
   kableExtra::kbl() %>%
   kableExtra::kable_paper("striped", font_size = 14, full_width = TRUE) %>%
   kableExtra::scroll_box(height = "200px", width = "100%",
                          box_css = "border: 1px solid #ddd; padding: 5px; ",
                          extra_css = NULL,
                          fixed_thead = TRUE)
-
-## ----echo=TRUE, eval=TRUE-----------------------------------------------------
-# IMPORT THE INPUT DATASET
-data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
-
-# IMPORT THE DATA DICTIONARY
-test_dictionary <- readRDS(
-  system.file("extdata", "test_dictionary.RDS", package = "cleanepi")
-)
-
-# SCAN THROUGH THE DATA
-scan_res <- scan_data(data)
-
-# PERFORM DATA CLEANING
-cleaned_data <- data %>%
-  standardize_column_names(keep = NULL, rename = c(DOB = "dateOfBirth")) %>%
-  replace_missing_values(target_columns = NULL, na_strings = "-99") %>%
-  remove_constants(cutoff = 1.0) %>%
-  remove_duplicates(target_columns = NULL) %>%
-  standardize_dates(
-    target_columns = NULL,
-    error_tolerance = 0.4,
-    format = NULL,
-    timeframe = as.Date(c("1973-05-29", "2023-05-29"))
-  ) %>%
-  check_subject_ids(
-    target_columns = "study_id",
-    prefix = "PS",
-    suffix = "P2",
-    range = c(1L, 100L),
-    nchar = 7L
-  ) %>%
-  convert_to_numeric(target_columns = "sex", lang = "en") %>%
-  clean_using_dictionary(dictionary = test_dictionary)
-
-# ADD THE DATA SCANNING RESULT TO THE REPORT
-cleaned_data <- add_to_report(
-   x = cleaned_data,
-   key = "scanning_result",
-   value = scan_res
-)
-
-## ----echo=TRUE, eval=FALSE----------------------------------------------------
-# print_report(
-#   data = cleaned_data,
-#   report_title = "{cleanepi} data cleaning report",
-#   output_directory = ".",
-#   output_file_name = NULL,
-#   format = "html",
-#   print = TRUE
-# )
 

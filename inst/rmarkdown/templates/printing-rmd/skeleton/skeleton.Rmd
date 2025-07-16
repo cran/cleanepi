@@ -12,8 +12,8 @@ params:
   removed_duplicates: NULL
   duplicates_checked_from: NULL
   out_of_range_dates: NULL
-  incorrect_subject_id: NULL
-  missing_ids: NULL
+  invalid_subject_ids: NULL
+  idx_missing_ids: NULL
   duplicated_ids: NULL
   converted_into_numeric: NULL
   misspelled_values: NULL
@@ -74,9 +74,9 @@ misspelled_values <- params[["misspelled_values"]]
 are_misspelled_values_found <- !is.null(misspelled_values)
 missing_values_replaced_at <- params[["missing_values_replaced_at"]]
 are_missing_values_replaced <- !is.null(missing_values_replaced_at)
-incorrect_subject_id <- params[["incorrect_subject_id"]]
+incorrect_subject_id <- params[["invalid_subject_ids"]]
 are_incorrect_subject_id <- !is.null(incorrect_subject_id)
-missing_ids <- params[["missing_ids"]]
+missing_ids <- params[["idx_missing_ids"]]
 are_missing_ids <- !is.null(missing_ids)
 duplicated_ids <- params[["duplicated_ids"]]
 are_duplicated_ids <- !is.null(duplicated_ids)
@@ -420,9 +420,11 @@ reactable::reactable(
 ### Missing value replaced with NA
 
 ```{r use_na, eval=are_missing_values_replaced}
-missing_values_replaced_at <- glue::glue_collapse(missing_values_replaced_at,
-                                                  sep = ", ")
-missing_values_replaced_at <- data.frame(missing_values_replaced_at)
+missing_values_replaced_at <- data.frame(
+  toString(missing_values_replaced_at),
+  stringsAsFactors = FALSE
+)
+names(missing_values_replaced_at) <- "missing values replaced with NA at"
 reactable::reactable(
   missing_values_replaced_at,
   sortable   = FALSE,
@@ -479,8 +481,8 @@ reactable::reactable(
 #### Missing ids
 
 ```{r missing_ids, eval=are_missing_ids}
-missing_ids            <- data.frame(missing_ids)
-colnames(missing_ids)  <- "row indices"
+missing_ids <- data.frame(toString(missing_ids), stringsAsFactors = FALSE)
+colnames(missing_ids) <- "row indices"
 row.names(missing_ids) <- "missing ids"
 reactable::reactable(
   missing_ids,
@@ -533,5 +535,25 @@ reactable::reactable(
 )
 ```
 
+### Columns converted into numeric {.tabset}
+
+```{r cols_converted_to_num, eval=are_converted_into_numeric}
+converted_into_numeric <- data.frame(
+  toString(converted_into_numeric),
+  stringsAsFactors = FALSE
+)
+names(converted_into_numeric) <- "columns converted into numeric"
+reactable::reactable(
+  converted_into_numeric,
+  sortable   = FALSE,
+  filterable = FALSE,
+  searchable = FALSE,
+  pagination = FALSE,
+  rownames   = FALSE,
+  striped    = TRUE,
+  compact    = TRUE,
+  fullWidth  = TRUE
+)
+```
 
 ## Aggregated data {.tabset}

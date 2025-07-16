@@ -17,8 +17,8 @@
 #'    to standardize the target columns.
 #'
 #' @returns The input dataset. When found, the incorrect date sequences will be
-#'    stored in the report and can be accessed using
-#'    \code{attr(data, "report")}.
+#'    stored in the report and can be accessed using the \code{print_report()}
+#'    function as shown in the example below.
 #' @export
 #'
 #' @examples
@@ -34,10 +34,16 @@
 #'     timeframe = NULL
 #'   )
 #'
-#' # check the date sequence in two columns
+#' # check whether all admission dates come after the test dates
 #' good_date_sequence <- check_date_sequence(
 #'   data = data,
 #'   target_columns = c("date_first_pcr_positive_test", "date.of.admission")
+#' )
+#'
+#' # display rows where admission dates do not come after the test dates
+#' print_report(
+#'   data = good_date_sequence,
+#'   what = "incorrect_date_sequence"
 #' )
 check_date_sequence <- function(data, target_columns) {
   checkmate::assert_vector(target_columns, any.missing = FALSE, min.len = 1L,
@@ -70,12 +76,34 @@ check_date_sequence <- function(data, target_columns) {
     }
   }
 
-  # checking the date sequence
+  # select the target columns
+  # add a column with the row indices
+  # and check the order of the date sequence
   tmp_data <- data %>% dplyr::select(dplyr::all_of(target_columns))
   order_date <- apply(tmp_data, 1L, is_date_sequence_ordered)
+  tmp_data[["row_id"]] <- seq_len(nrow(tmp_data))
+
+  # send a message if the comparison could not be achieved due to missing
+  # values in either of the columns
+  if (all(is.na(order_date))) {
+    cli::cli_alert_info(
+      tr_("Impossible to check the sequence of the date events due to missing values.") # nolint: line_length_linter
+    )
+    return(data)
+  }
+
+  # send a message that sequence of date events can not be checked in a certain
+  # number of rows due to missing values
+  if (anyNA(order_date)) {
+    cli::cli_alert_info(c(
+      tr_("Cannot check the sequence of date events across {.val {sum(is.na(order_date))}} rows due to missing data.") # nolint: line_length_linter
+    ))
+    tmp_data <- tmp_data[!is.na(order_date), ]
+  }
 
   # when everything is in order,
   # send a message that no incorrect sequence of event was found
+  order_date <- order_date[!is.na(order_date)]
   if (all(order_date)) {
     cli::cli_alert_info(
       tr_("No incorrect date sequence was detected.")
@@ -86,10 +114,7 @@ check_date_sequence <- function(data, target_columns) {
   # flag out the row indices of the incorrect sequence of events
   bad_order <- which(!order_date)
   tmp_data <- tmp_data[bad_order, ]
-  # add the row numbers of incorrect records to the report
-  tmp_data <- data.frame(
-    cbind(row_id = bad_order, tmp_data)
-  )
+
   # adding incorrect records to the report
   data <- add_to_report(
     x = data,
@@ -99,7 +124,7 @@ check_date_sequence <- function(data, target_columns) {
   # send a message about the presence of incorrect date sequence
   cli::cli_inform(c(
     "!" = tr_("Detected {.val {length(bad_order)}} incorrect date sequence{?s} at line{?s}: {.val {toString(bad_order)}}."), # nolint: line_length_linter
-    i = tr_("Enter {.code attr(dat, \"report\")[[\"incorrect_date_sequence\"]]} to access them, where {.val dat} is the object used to store the output from this operation.") # nolint: line_length_linter
+    i = tr_("Enter {.code print_report(data = dat, \"incorrect_date_sequence\")} to access them, where {.val dat} is the object used to store the output from this operation.") # nolint: line_length_linter
   ))
 
   return(data)

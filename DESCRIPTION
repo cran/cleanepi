@@ -1,6 +1,6 @@
 Package: cleanepi
 Title: Clean and Standardize Epidemiological Data
-Version: 1.1.0
+Version: 1.1.1
 Authors@R: c(
     person("Karim", "Mané", , "karim.mane@lshtm.ac.uk", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-9892-2999")),
@@ -18,7 +18,7 @@ Authors@R: c(
            comment = c(ORCID = "0000-0001-5294-7819")),
     person("James M.", "Azam", , "james.azam@lshtm.ac.uk", role = "rev",
            comment = c(ORCID = "0000-0001-5782-7330")),
-    person("Joshua W.", "Lambert", , "joshua.lambert@lshtm.ac.uk", role = "rev",
+    person("Joshua W.", "Lambert", , "joshua.lambert@lshtm.ac.uk", role = c("rev", "ctb"),
            comment = c(ORCID = "0000-0001-5218-3046")),
     person("Chris", "Hartgerink", , "chris@data.org", role = "rev",
            comment = c(ORCID = "0000-0003-1050-6809")),
@@ -43,7 +43,8 @@ Imports: checkmate, cli, dplyr, janitor, linelist (>= 1.0.0),
         lubridate, magrittr, matchmaker, numberize, readr, rlang,
         tibble
 Suggests: htmlwidgets, kableExtra, knitr, lintr, markdown, naniar,
-        reactable, rmarkdown, spelling, testthat (>= 3.0.0)
+        reactable, rmarkdown, spelling, systemfonts, testthat (>=
+        3.0.0)
 VignetteBuilder: knitr
 Config/Needs/website: epiverse-trace/epiversetheme
 Config/potools/style: explicit
@@ -53,23 +54,26 @@ Language: en-US
 LazyData: true
 RoxygenNote: 7.3.2
 NeedsCompilation: no
-Packaged: 2025-03-04 09:56:22 UTC; hugo
-Author: Karim Mané [aut, cre] (<https://orcid.org/0000-0002-9892-2999>),
+Packaged: 2025-07-16 10:25:36 UTC; karimmane
+Author: Karim Mané [aut, cre] (ORCID: <https://orcid.org/0000-0002-9892-2999>),
   Thibaut Jombart [ctb] (Thibault contributed in development of
     date_guess().),
-  Abdoelnaser Degoot [aut] (<https://orcid.org/0000-0001-8788-2496>),
+  Abdoelnaser Degoot [aut] (ORCID:
+    <https://orcid.org/0000-0001-8788-2496>),
   Bankolé Ahadzie [aut],
   Nuredin Mohammed [aut],
-  Bubacarr Bah [aut] (<https://orcid.org/0000-0003-3318-6668>),
-  Hugo Gruson [ctb, rev] (<https://orcid.org/0000-0002-4094-1476>),
-  Pratik R. Gupte [rev] (<https://orcid.org/0000-0001-5294-7819>),
-  James M. Azam [rev] (<https://orcid.org/0000-0001-5782-7330>),
-  Joshua W. Lambert [rev] (<https://orcid.org/0000-0001-5218-3046>),
-  Chris Hartgerink [rev] (<https://orcid.org/0000-0003-1050-6809>),
-  Andree Valle-Campos [rev, ctb]
-    (<https://orcid.org/0000-0002-7779-481X>),
-  London School of Hygiene and Tropical Medicine, LSHTM [cph] (00a0jsq62),
+  Bubacarr Bah [aut] (ORCID: <https://orcid.org/0000-0003-3318-6668>),
+  Hugo Gruson [ctb, rev] (ORCID: <https://orcid.org/0000-0002-4094-1476>),
+  Pratik R. Gupte [rev] (ORCID: <https://orcid.org/0000-0001-5294-7819>),
+  James M. Azam [rev] (ORCID: <https://orcid.org/0000-0001-5782-7330>),
+  Joshua W. Lambert [rev, ctb] (ORCID:
+    <https://orcid.org/0000-0001-5218-3046>),
+  Chris Hartgerink [rev] (ORCID: <https://orcid.org/0000-0003-1050-6809>),
+  Andree Valle-Campos [rev, ctb] (ORCID:
+    <https://orcid.org/0000-0002-7779-481X>),
+  London School of Hygiene and Tropical Medicine, LSHTM [cph] (ROR:
+    <https://ror.org/00a0jsq62>),
   data.org [fnd]
 Maintainer: Karim Mané <karim.mane@lshtm.ac.uk>
 Repository: CRAN
-Date/Publication: 2025-03-04 10:30:02 UTC
+Date/Publication: 2025-07-16 10:40:02 UTC
