@@ -35,57 +35,64 @@
 #'          where the missing value strings have been replaced with NA}
 #'      \item{`incorrect_subject_id`}{To display the missing, duplicated and
 #'          invalid subject subject IDs}
+#'      \item{`scanning_result`}{To display the output of the scan_data()
+#'          function}
 #'    }
 #'
 #' @returns A \code{<character>} containing the name and path of the saved
 #'    report
 #' @examples
-#' \donttest{
-#' data <- readRDS(system.file("extdata", "test_df.RDS", package = "cleanepi"))
-#' test_dictionary <- readRDS(
-#'   system.file("extdata", "test_dictionary.RDS", package = "cleanepi")
-#' )
+#' \dontrun{
+#'   data <- readRDS(
+#'     system.file("extdata", "test_df.RDS",package = "cleanepi")
+#'   )
+#'   test_dictionary <- readRDS(
+#'     system.file("extdata", "test_dictionary.RDS", package = "cleanepi")
+#'   )
 #'
-#' # scan through the data
-#' scan_res <- scan_data(data)
+#'   # scan through the data
+#'   scan_res <- scan_data(data)
 #'
-#' # Perform data cleaning
-#' cleaned_data <- data %>%
-#'  standardize_column_names(keep = NULL, rename = c("DOB" = "dateOfBirth")) %>%
-#'  replace_missing_values(target_columns = NULL, na_strings = "-99") %>%
-#'  remove_constants(cutoff = 1.0) %>%
-#'  remove_duplicates(target_columns = NULL) %>%
-#'  standardize_dates(
-#'    target_columns = NULL,
-#'    error_tolerance = 0.4,
-#'    format = NULL,
-#'    timeframe = as.Date(c("1973-05-29", "2023-05-29"))
-#'  ) %>%
-#'  check_subject_ids(
-#'    target_columns = "study_id",
-#'    prefix = "PS",
-#'    suffix = "P2",
-#'    range = c(1L, 100L),
-#'    nchar = 7L
-#'  ) %>%
-#'  convert_to_numeric(target_columns = "sex", lang = "en") %>%
-#'  clean_using_dictionary(dictionary = test_dictionary)
+#'   # Perform data cleaning
+#'   cleaned_data <- data %>%
+#'    standardize_column_names(
+#'      keep = NULL,
+#'      rename = c("DOB" = "dateOfBirth")
+#'    ) %>%
+#'    replace_missing_values(target_columns = NULL, na_strings = "-99") %>%
+#'    remove_constants(cutoff = 1.0) %>%
+#'    remove_duplicates(target_columns = NULL) %>%
+#'    standardize_dates(
+#'      target_columns = NULL,
+#'      error_tolerance = 0.4,
+#'      format = NULL,
+#'      timeframe = as.Date(c("1973-05-29", "2023-05-29"))
+#'    ) %>%
+#'    check_subject_ids(
+#'      target_columns = "study_id",
+#'      prefix = "PS",
+#'      suffix = "P2",
+#'      range = c(1L, 100L),
+#'      nchar = 7L
+#'    ) %>%
+#'    convert_to_numeric(target_columns = "sex", lang = "en") %>%
+#'    clean_using_dictionary(dictionary = test_dictionary)
 #'
-#' # add the data scanning result to the report
-#' cleaned_data <- add_to_report(
-#'   x = cleaned_data,
-#'   key = "scanning_result",
-#'   value = scan_res
-#' )
+#'   # add the data scanning result to the report
+#'   cleaned_data <- add_to_report(
+#'     x = cleaned_data,
+#'     key = "scanning_result",
+#'     value = scan_res
+#'   )
 #'
-#' # save a report in the current directory using the previously-created objects
-#' print_report(
-#'   data = cleaned_data,
-#'   report_title = "{cleanepi} data cleaning report",
-#'   output_file_name = NULL,
-#'   format = "html",
-#'   print = TRUE
-#' )
+#'   # save the report in the R temporary directory
+#'   print_report(
+#'     data = cleaned_data,
+#'     report_title = "{cleanepi} data cleaning report",
+#'     output_file_name = NULL,
+#'     format = "html",
+#'     print = FALSE
+#'   )
 #' }
 #'
 #' @export
@@ -110,7 +117,8 @@ print_report <- function(data,
     choices = c("incorrect_date_sequence", "colnames", "converted_into_numeric",
                 "date_standardization", "misspelled_values",
                 "removed_duplicates", "found_duplicates", "constant_data",
-                "missing_values_replaced_at", "incorrect_subject_id")
+                "missing_values_replaced_at", "incorrect_subject_id",
+                "scanning_result")
   )
 
   if (!requireNamespace("reactable", quietly = TRUE)) {
@@ -157,8 +165,6 @@ print_report <- function(data,
 
   # this ensures to add the logo to the report
   report[["report_title"]] <- report_title
-  man_path <- file.path("man", "figures")
-  report[["logo"]] <- system.file(man_path, "logo.svg", package = "cleanepi")
 
   # render the Rmd file to generate the report
   temp_dir <- tempdir()
@@ -167,17 +173,29 @@ print_report <- function(data,
     tr_("Generating html report in {.file {temp_dir}}.")
   )
 
+  # deduplicate the report
+  report <- report[!duplicated(report)]
+
   # unnest date standardisation report
-  report <- unnest_report(report, "date_standardization", "multi_format_dates",
-                          "out_of_range_dates")
+  report <- unnest_report(
+    report,
+    what = "date_standardization",
+    "multi_format_dates", "out_of_range_dates"
+  )
 
   # unnest duplicates finding report
-  report <- unnest_report(report, "found_duplicates", "duplicated_rows",
-                          "duplicates_checked_from")
+  report <- unnest_report(
+    report = report,
+    what = "found_duplicates",
+    "duplicated_rows", "duplicates_checked_from"
+  )
 
   # unnest subject IDs checks report
-  report <- unnest_report(report, "incorrect_subject_id", "idx_missing_ids",
-                          "duplicated_ids", "invalid_subject_ids")
+  report <- unnest_report(
+    report,
+    what = "incorrect_subject_id",
+    "idx_missing_ids", "duplicated_ids", "invalid_subject_ids"
+  )
 
   # render the report
   rmarkdown::render(
@@ -208,7 +226,7 @@ print_report <- function(data,
 #'    removed.
 #' @keywords internal
 unnest_report <- function(report, what, ...) {
-  checkmate::assert_list(report, max.len = 10, min.len = 1)
+  checkmate::assert_list(report, min.len = 1)
   # get the extra argument
   extra_args <- list(...)
 
@@ -216,8 +234,7 @@ unnest_report <- function(report, what, ...) {
     target <- report[[what]]
     for (arg in extra_args) {
       if (arg %in% names(target)) {
-        report[[arg]] <-
-          target[[arg]]
+        report[[arg]] <- target[[arg]]
       }
     }
     report[[what]] <- NULL

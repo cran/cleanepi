@@ -41,10 +41,11 @@ remove_duplicates <- function(data, target_columns = NULL) {
   # setting up the variables below to NULL to avoid linters
   report <- attr(data, "report")
   dat <- data
+  attr(dat, "report") <- NULL
 
   # get the correct names in case some have been modified - see the
   # `retrieve_column_names()` function for more details
-  target_columns <- retrieve_column_names(data, target_columns)
+  target_columns <- retrieve_column_names(dat, target_columns)
   target_columns <- get_target_column_names(dat, target_columns, cols = NULL)
 
   # find duplicates
@@ -89,8 +90,10 @@ remove_duplicates <- function(data, target_columns = NULL) {
 #'    \code{linelist_tags} from which duplicates to be removed. Its default
 #'    value is \code{NULL}, which considers duplicates across all columns.
 #'
-#' @returns A \code{<data.frame>} or \code{<linelist>} of all duplicated rows
-#'    with following 2 additional columns:
+#' @returns The input \code{<data.frame>} or \code{<linelist>}, and adds a new
+#'    element to the report object. This is specifically a data frame with the
+#'    columns used to identify duplicates, augmented with the following two
+#'    additional columns:
 #'    \describe{
 #'      \item{row_id}{The indices of the duplicated rows from the input data.
 #'          Users can choose from these indices, which row they consider as
@@ -115,6 +118,9 @@ remove_duplicates <- function(data, target_columns = NULL) {
 #'
 #' # print the detected duplicates
 #' print_report(dups, "found_duplicates")
+#'
+#' # access duplicated rows only
+#' print_report(dups, "found_duplicates")$duplicated_rows
 #'
 find_duplicates <- function(data, target_columns = NULL) {
   # get the target column names

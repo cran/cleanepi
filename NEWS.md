@@ -1,3 +1,27 @@
+# cleanepi 1.1.2
+
+## Bug fixes
+
+* `replace_missing_values()` now matches with `na_strings` insensitive to
+case or leading/trailing white space (#257, @joshwlambert).
+
+* Fix {cli}-related errors in `check_subject_ids()` function(#260, @Karim-Mane).
+
+* fix error in `print_report()` by remove duplicated elements from the report
+object(#261, @Karim-Mane).
+
+* Add clarity about the return object of the `find_duplicates()` function and
+its generated report element (#264, @Karim-Mane).
+
+## Enhancements
+
+* Get {cleanepi} package logo back into HTML report generated from the
+`print_report()` function (#268, @Karim-Mane).
+  * Make a copy of the logo in `inst/extdata/` to use simple markdown syntax
+  for inserting logo in the report.
+
+* Bubacarr Bah is now the package maintainer (#272, @Karim-Mane)
+
 # cleanepi 1.1.1
 
 ## Bug fixes

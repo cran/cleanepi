@@ -6,7 +6,6 @@ Levenshtein
 Lifecycle
 ORCID
 Pratik
-Thibault
 Unnest
 Valle
 YYYY
@@ -14,7 +13,6 @@ Ymd
 analytics
 bookdown
 cli
-dateOfBirth
 dplyr
 epiCleanr
 funder
@@ -38,7 +36,6 @@ nchar
 numberize
 oldrel
 packagename
-pcr
 pkgdown
 potools
 reactable

@@ -1,16 +1,16 @@
 Package: cleanepi
 Title: Clean and Standardize Epidemiological Data
-Version: 1.1.1
+Version: 1.1.2
 Authors@R: c(
-    person("Karim", "Mané", , "karim.mane@lshtm.ac.uk", role = c("aut", "cre"),
+    person("Karim", "Mané", , "karim.mane@lshtm.ac.uk", role = "aut",
            comment = c(ORCID = "0000-0002-9892-2999")),
     person("Thibaut", "Jombart", , "thibautjombart@gmail.com", role = "ctb",
-           comment = "Thibault contributed in development of date_guess()."),
+           comment = "Thibaut contributed in development of date_guess()."),
     person("Abdoelnaser", "Degoot", , "abdoelnaser-mahmood.degoot@lshtm.ac.uk", role = "aut",
            comment = c(ORCID = "0000-0001-8788-2496")),
     person("Bankolé", "Ahadzie", , "Bankole.Ahadzie@lshtm.ac.uk", role = "aut"),
     person("Nuredin", "Mohammed", , "Nuredin.Mohammed@lshtm.ac.uk", role = "aut"),
-    person("Bubacarr", "Bah", , "Bubacarr.Bah1@lshtm.ac.uk", role = "aut",
+    person("Bubacarr", "Bah", , "Bubacarr.Bah1@lshtm.ac.uk", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-3318-6668")),
     person("Hugo", "Gruson", , "hugo@data.org", role = c("ctb", "rev"),
            comment = c(ORCID = "0000-0002-4094-1476")),
@@ -54,15 +54,16 @@ Language: en-US
 LazyData: true
 RoxygenNote: 7.3.2
 NeedsCompilation: no
-Packaged: 2025-07-16 10:25:36 UTC; karimmane
-Author: Karim Mané [aut, cre] (ORCID: <https://orcid.org/0000-0002-9892-2999>),
-  Thibaut Jombart [ctb] (Thibault contributed in development of
+Packaged: 2025-10-28 18:06:26 UTC; karimmane
+Author: Karim Mané [aut] (ORCID: <https://orcid.org/0000-0002-9892-2999>),
+  Thibaut Jombart [ctb] (Thibaut contributed in development of
     date_guess().),
   Abdoelnaser Degoot [aut] (ORCID:
     <https://orcid.org/0000-0001-8788-2496>),
   Bankolé Ahadzie [aut],
   Nuredin Mohammed [aut],
-  Bubacarr Bah [aut] (ORCID: <https://orcid.org/0000-0003-3318-6668>),
+  Bubacarr Bah [aut, cre] (ORCID:
+    <https://orcid.org/0000-0003-3318-6668>),
   Hugo Gruson [ctb, rev] (ORCID: <https://orcid.org/0000-0002-4094-1476>),
   Pratik R. Gupte [rev] (ORCID: <https://orcid.org/0000-0001-5294-7819>),
   James M. Azam [rev] (ORCID: <https://orcid.org/0000-0001-5782-7330>),
@@ -74,6 +75,6 @@ Author: Karim Mané [aut, cre] (ORCID: <https://orcid.org/0000-0002-9892-2999>),
   London School of Hygiene and Tropical Medicine, LSHTM [cph] (ROR:
     <https://ror.org/00a0jsq62>),
   data.org [fnd]
-Maintainer: Karim Mané <karim.mane@lshtm.ac.uk>
+Maintainer: Bubacarr Bah <Bubacarr.Bah1@lshtm.ac.uk>
 Repository: CRAN
-Date/Publication: 2025-07-16 10:40:02 UTC
+Date/Publication: 2025-10-29 09:40:02 UTC
